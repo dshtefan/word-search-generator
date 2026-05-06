@@ -1,6 +1,4 @@
-import * as React from "react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { XIcon } from "lucide-react"
 
 interface GridSizeInputsProps {

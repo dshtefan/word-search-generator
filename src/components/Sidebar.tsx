@@ -227,7 +227,7 @@ function Sidebar() {
               <Select
                 value={state.fontFamily}
                 onValueChange={(value) =>
-                  dispatch({ type: "SET_FONT_FAMILY", payload: value })
+                  dispatch({ type: "SET_FONT_FAMILY", payload: value ?? '' })
                 }
               >
                 <SelectTrigger id="font-family" className="w-full">
@@ -249,7 +249,7 @@ function Sidebar() {
                 onValueChange={(value) =>
                   dispatch({
                     type: "SET_FONT_SIZE",
-                    payload: Number.parseInt(value, 10),
+                    payload: Number.parseInt(value ?? '', 10),
                   })
                 }
               >
