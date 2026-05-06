@@ -1,11 +1,17 @@
-import { Button } from "@/components/ui/button"
+import { WordSearchProvider } from "@/context/WordSearchContext"
+import { Sidebar } from "@/components/Sidebar"
+import { Preview } from "@/components/Preview"
 
 function App() {
   return (
-    <div className="min-h-screen p-4">
-      <h1 className="text-2xl font-bold mb-4">Word Search Generator</h1>
-      <Button>Getting Started</Button>
-    </div>
+    <WordSearchProvider>
+      <div className="flex h-screen">
+        <Sidebar />
+        <main className="flex flex-1 items-center justify-center bg-muted/30 p-4 overflow-auto">
+          <Preview />
+        </main>
+      </div>
+    </WordSearchProvider>
   )
 }
 
