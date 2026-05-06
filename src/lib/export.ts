@@ -8,6 +8,7 @@ export interface ExportOptions {
   filename?: string
   solutionGrid?: Cell[][]
   highlightColor?: string
+  fontFamily?: string
 }
 
 function getGridTable(tableId = "word-search-grid-with-answers"): HTMLTableElement | null {
@@ -119,7 +120,8 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   const data = readGridFromDOM(tableId)
   if (!data) return null
 
-  const { cells, cols, rows, cellWidth, cellHeight, fontFamily, fontSizePx, gridStyle, wordLines } = data
+  const { cells, cols, rows, cellWidth, cellHeight, fontFamily: domFont, fontSizePx, gridStyle, wordLines } = data
+  const fontFamily = opts?.fontFamily || domFont
   const table = tableId ? document.getElementById(tableId) : null
   const highlightColor = opts?.highlightColor || table?.getAttribute("data-highlight-color") || "#9e9e9e"
 
@@ -150,8 +152,8 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   const scaleX = targetW / naturalW
   const scaleY = targetH / naturalH
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${fontFamily}" font-size="${fontSizePx}px">`
-
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${fontSizePx}px">`
+  svg += getFontStyle(fontFamily)
   svg += `<g transform="scale(${scaleX},${scaleY})">`
 
   if (drawWordLines) {
@@ -165,7 +167,7 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
       const cell = cells[r][c]
       const cx = cell.x + cell.width / 2
       const cy = cell.y + cell.height / 2
-      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000">${escapeXml(cell.letter)}</text>`
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000" font-family="${escapeXml(fontFamily)}">${escapeXml(cell.letter)}</text>`
     }
   }
 
@@ -184,6 +186,22 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
 
   svg += `</g></svg>`
   return svg
+}
+
+function getFontStyle(fontFamily: string): string {
+  const googleFonts: Record<string, string> = {
+    Inter: "Inter:wght@400;500;600",
+    Roboto: "Roboto:wght@400;500",
+    "Open Sans": "Open+Sans:wght@400;500;600",
+    Lato: "Lato:wght@400;700",
+    Montserrat: "Montserrat:wght@400;500;600",
+    Raleway: "Raleway:wght@400;500;600",
+    Poppins: "Poppins:wght@400;500;600",
+    Nunito: "Nunito:wght@400;500;600",
+  }
+  const spec = googleFonts[fontFamily]
+  if (!spec) return ""
+  return `<style><![CDATA[@import url('https://fonts.googleapis.com/css2?family=${spec}&display=swap');]]></style>`
 }
 
 function escapeXml(s: string): string {

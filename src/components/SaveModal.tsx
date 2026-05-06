@@ -71,6 +71,7 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
       const opts: ExportOptions = {}
       opts.filename = filename || "ws"
       opts.highlightColor = state.highlightColor
+      opts.fontFamily = state.fontFamily
       opts.solutionGrid = state.solutionGrid ?? undefined
       if (downloadBoth) opts.both = true
       if (useResolution) opts.resolution = { w: resW, h: resH }
