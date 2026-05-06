@@ -39,7 +39,7 @@ const initialState: WordSearchState = {
   language: 'de',
   gridX: 19,
   gridY: 19,
-  highlightColor: '#9e9e9e',
+  highlightColor: '#90a4ae',
   cardinalDirections: ['up', 'down', 'left', 'right'],
   diagonalDirections: ['up-left', 'up-right', 'down-left', 'down-right'],
   fontFamily: 'Open Sans',

@@ -123,7 +123,7 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   const { cells, cols, rows, cellWidth, cellHeight, fontFamily: domFont, fontSizePx, gridStyle, wordLines } = data
   const fontFamily = opts?.fontFamily || domFont
   const table = tableId ? document.getElementById(tableId) : null
-  const highlightColor = opts?.highlightColor || table?.getAttribute("data-highlight-color") || "#9e9e9e"
+  const highlightColor = opts?.highlightColor || table?.getAttribute("data-highlight-color") || "#90a4ae"
 
   let effectiveWordLines = wordLines
   if (drawWordLines && effectiveWordLines.length === 0 && opts?.solutionGrid) {
