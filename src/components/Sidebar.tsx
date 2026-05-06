@@ -76,7 +76,6 @@ function Sidebar() {
     const words = value
       .split("\n")
       .map((w) => w.trim())
-      .filter((w) => w.length > 0)
     dispatch({ type: "SET_WORDS", payload: words })
   }
 
@@ -93,7 +92,8 @@ function Sidebar() {
     dispatch({ type: 'SET_ERROR', payload: null })
     const allDirections = [...state.cardinalDirections, ...state.diagonalDirections]
     try {
-      const result = generateGrid(state.words, allDirections, state.gridX, state.gridY, state.language)
+      const words = state.words.filter(w => w.length > 0)
+      const result = generateGrid(words, allDirections, state.gridX, state.gridY, state.language)
       dispatch({ type: 'SET_GRID', payload: result.grid })
       dispatch({ type: 'SET_SOLUTION_GRID', payload: result.solutionGrid })
       dispatch({ type: 'SET_IS_GENERATED', payload: true })
