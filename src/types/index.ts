@@ -29,6 +29,8 @@ export interface WordSearchState {
   fontFamily: string
   fontSize: number
   gridStyle: GridStyle
+  useCustomFont: boolean
+  customFontUrl: string
   grid: Cell[][] | null
   solutionGrid: Cell[][] | null
   isGenerated: boolean

@@ -5,9 +5,12 @@ import { GridSizeInputs } from "@/components/GridSizeInputs"
 import { MultiSelect } from "@/components/MultiSelect"
 import { SaveModal } from "@/components/SaveModal"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { ColorPicker } from "@/components/ui/color-picker"
+import { useCustomFont } from "@/hooks/useCustomFont"
 import {
   Select,
   SelectContent,
@@ -71,6 +74,10 @@ const DIAGONAL_OPTIONS = [
 function Sidebar() {
   const { state, dispatch } = useWordSearch()
   const [saveOpen, setSaveOpen] = useState(false)
+
+  useCustomFont(state.useCustomFont, state.customFontUrl, (name) => {
+    dispatch({ type: "SET_FONT_FAMILY", payload: name })
+  })
 
   function handleWordsChange(value: string) {
     const words = value
@@ -224,23 +231,47 @@ function Sidebar() {
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="font-family">Font</Label>
-              <Select
-                value={state.fontFamily}
-                onValueChange={(value) =>
-                  dispatch({ type: "SET_FONT_FAMILY", payload: value ?? '' })
-                }
-              >
-                <SelectTrigger id="font-family" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FONT_OPTIONS.map((font) => (
-                    <SelectItem key={font} value={font}>
-                      {font}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {!state.useCustomFont && (
+                <Select
+                  value={state.fontFamily}
+                  onValueChange={(value) =>
+                    dispatch({ type: "SET_FONT_FAMILY", payload: value ?? '' })
+                  }
+                >
+                  <SelectTrigger id="font-family" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map((font) => (
+                      <SelectItem key={font} value={font}>
+                        {font}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <Label className="flex items-center gap-2 font-normal cursor-pointer">
+                  <Checkbox
+                    checked={state.useCustomFont}
+                    onCheckedChange={(v) =>
+                      dispatch({ type: "SET_USE_CUSTOM_FONT", payload: !!v })
+                    }
+                  />
+                  Custom Google Font
+                </Label>
+                {state.useCustomFont && (
+                  <Input
+                    type="url"
+                    placeholder="https://fonts.googleapis.com/css2?family=..."
+                    value={state.customFontUrl}
+                    onChange={(e) =>
+                      dispatch({ type: "SET_CUSTOM_FONT_URL", payload: e.target.value })
+                    }
+                    className="h-8 text-xs"
+                  />
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="font-size">Font Size</Label>

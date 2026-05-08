@@ -25,6 +25,8 @@ function saveState(state: WordSearchState) {
       fontFamily: state.fontFamily,
       fontSize: state.fontSize,
       gridStyle: state.gridStyle,
+      useCustomFont: state.useCustomFont,
+      customFontUrl: state.customFontUrl,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   } catch { /* ignore quota errors */ }
@@ -45,6 +47,8 @@ const initialState: WordSearchState = {
   fontFamily: 'Open Sans',
   fontSize: 28,
   gridStyle: 'outer',
+  useCustomFont: false,
+  customFontUrl: '',
   grid: null,
   solutionGrid: null,
   isGenerated: false,
@@ -63,6 +67,8 @@ type WordSearchAction =
   | { type: 'SET_FONT_FAMILY'; payload: string }
   | { type: 'SET_FONT_SIZE'; payload: number }
   | { type: 'SET_GRID_STYLE'; payload: GridStyle }
+  | { type: 'SET_USE_CUSTOM_FONT'; payload: boolean }
+  | { type: 'SET_CUSTOM_FONT_URL'; payload: string }
   | { type: 'SET_GRID'; payload: Cell[][] | null }
   | { type: 'SET_SOLUTION_GRID'; payload: Cell[][] | null }
   | { type: 'SET_IS_GENERATED'; payload: boolean }
@@ -92,6 +98,10 @@ function reducer(state: WordSearchState, action: WordSearchAction): WordSearchSt
       return { ...state, fontSize: action.payload }
     case 'SET_GRID_STYLE':
       return { ...state, gridStyle: action.payload }
+    case 'SET_USE_CUSTOM_FONT':
+      return { ...state, useCustomFont: action.payload }
+    case 'SET_CUSTOM_FONT_URL':
+      return { ...state, customFontUrl: action.payload }
     case 'SET_GRID':
       return { ...state, grid: action.payload }
     case 'SET_SOLUTION_GRID':
