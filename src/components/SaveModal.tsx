@@ -78,6 +78,8 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
         opts.localFontFamily = state.localFontFamily
       }
       opts.solutionGrid = state.solutionGrid ?? undefined
+      opts.words = state.words
+      opts.placements = state.placements
       if (downloadBoth) opts.both = true
       if (useResolution) opts.resolution = { w: resW, h: resH }
       if (useAspectRatio) opts.aspectRatio = { w: ratioW, h: ratioH }

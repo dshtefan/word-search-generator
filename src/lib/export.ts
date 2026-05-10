@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf"
-import type { Cell } from "@/types"
+import type { Cell, WordPlacement } from "@/types"
 
 export interface ExportOptions {
   resolution?: { w: number; h: number }
@@ -7,6 +7,8 @@ export interface ExportOptions {
   both?: boolean
   filename?: string
   solutionGrid?: Cell[][]
+  words?: string[]
+  placements?: WordPlacement[]
   highlightColor?: string
   fontFamily?: string
   customFontUrl?: string
@@ -36,24 +38,31 @@ interface WordLine {
   y2: number
 }
 
-function buildWordLinesFromGrid(grid: Cell[][], cellWidth: number, cellHeight: number): WordLine[] {
-  const map = new Map<number, { x: number; y: number }[]>()
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      const idx = grid[y][x].wordIndex
-      if (idx !== null) {
-        if (!map.has(idx)) map.set(idx, [])
-        map.get(idx)!.push({ x: x * cellWidth + cellWidth / 2, y: y * cellHeight + cellHeight / 2 })
-      }
+const DIR_MAP: Record<string, { dx: number; dy: number }> = {
+  up: { dx: 0, dy: -1 },
+  down: { dx: 0, dy: 1 },
+  left: { dx: -1, dy: 0 },
+  right: { dx: 1, dy: 0 },
+  'up-left': { dx: -1, dy: -1 },
+  'up-right': { dx: 1, dy: -1 },
+  'down-left': { dx: -1, dy: 1 },
+  'down-right': { dx: 1, dy: 1 },
+}
+
+function buildWordLinesFromPlacements(placements: WordPlacement[], words: string[], cellWidth: number, cellHeight: number): WordLine[] {
+  return placements.map((p) => {
+    const word = words[p.index] ?? ''
+    const len = word.length
+    const { dx, dy } = DIR_MAP[p.direction]
+    const ex = p.startX + (len - 1) * dx
+    const ey = p.startY + (len - 1) * dy
+    return {
+      x1: p.startX * cellWidth + cellWidth / 2,
+      y1: p.startY * cellHeight + cellHeight / 2,
+      x2: ex * cellWidth + cellWidth / 2,
+      y2: ey * cellHeight + cellHeight / 2,
     }
-  }
-  const lines: WordLine[] = []
-  for (const [, positions] of map) {
-    if (positions.length < 2) continue
-    positions.sort((a, b) => (a.y - b.y) || (a.x - b.x))
-    lines.push({ x1: positions[0].x, y1: positions[0].y, x2: positions[positions.length - 1].x, y2: positions[positions.length - 1].y })
-  }
-  return lines
+  })
 }
 
 function readGridFromDOM(tableId?: string): { cells: CellExport[][]; cols: number; rows: number; cellWidth: number; cellHeight: number; fontFamily: string; fontSizePx: number; gridStyle: "full" | "outer" | "none"; wordLines: WordLine[] } | null {
@@ -129,8 +138,8 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   const highlightColor = opts?.highlightColor || table?.getAttribute("data-highlight-color") || "#90a4ae"
 
   let effectiveWordLines = wordLines
-  if (drawWordLines && effectiveWordLines.length === 0 && opts?.solutionGrid) {
-    effectiveWordLines = buildWordLinesFromGrid(opts.solutionGrid, cellWidth, cellHeight)
+  if (drawWordLines && effectiveWordLines.length === 0 && opts?.placements && opts?.words) {
+    effectiveWordLines = buildWordLinesFromPlacements(opts.placements, opts.words, cellWidth, cellHeight)
   }
 
   const naturalW = cols * cellWidth

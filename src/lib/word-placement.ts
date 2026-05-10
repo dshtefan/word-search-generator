@@ -1,4 +1,4 @@
-import type { Cell, Direction, Language } from '../types'
+import type { Cell, Direction, Language, WordPlacement } from '../types'
 import { getRandomLetter } from './letter-frequencies'
 
 const DIRECTION_OFFSETS: Record<Direction, { dx: number; dy: number }> = {
@@ -202,7 +202,7 @@ export function generateGrid(
   gridX: number,
   gridY: number,
   language: Language
-): { grid: Cell[][]; solutionGrid: Cell[][] } {
+): { grid: Cell[][]; solutionGrid: Cell[][]; placements: WordPlacement[] } {
   if (words.length === 0) throw new Error('At least one word is required')
   if (directions.length === 0) throw new Error('At least one direction must be selected')
   if (words.some(w => w.length === 0)) throw new Error('Words cannot be empty strings')
@@ -220,6 +220,7 @@ export function generateGrid(
   const directionUsage: Record<string, number> = {}
   for (const d of directions) directionUsage[d] = 0
   let attempts = 0
+  const collectedPlacements: WordPlacement[] = []
 
   function backtrack(index: number): boolean {
     if (index >= shuffledWords.length) return true
@@ -243,10 +244,12 @@ export function generateGrid(
       )
 
       directionUsage[placement.direction]++
+      collectedPlacements.push({ index: originalIndex, startX: placement.startX, startY: placement.startY, direction: placement.direction })
 
       if (backtrack(index + 1)) return true
 
       directionUsage[placement.direction]--
+      collectedPlacements.pop()
       removeWord(snapshots, workingGrid)
     }
 
@@ -264,5 +267,6 @@ export function generateGrid(
 
   fillEmptyCells(workingGrid, gridX, gridY, language)
 
-  return buildOutputGrids(workingGrid)
+  const { grid, solutionGrid } = buildOutputGrids(workingGrid)
+  return { grid, solutionGrid, placements: collectedPlacements }
 }

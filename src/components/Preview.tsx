@@ -33,11 +33,13 @@ export function Preview() {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="no-answers" className="flex justify-center">
-        <WordSearchGrid grid={state.grid} showAnswers={false} tableId="word-search-grid-content" {...gridProps} />
+        <WordSearchGrid grid={state.grid} words={state.words} placements={state.placements} showAnswers={false} tableId="word-search-grid-content" {...gridProps} />
       </TabsContent>
       <TabsContent value="with-answers" className="flex justify-center">
         <WordSearchGrid
           grid={state.solutionGrid ?? state.grid}
+          words={state.words}
+          placements={state.placements}
           showAnswers
           tableId="word-search-grid-content"
           {...gridProps}

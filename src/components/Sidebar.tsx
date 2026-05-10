@@ -104,12 +104,14 @@ function Sidebar() {
       const result = generateGrid(words, allDirections, state.gridX, state.gridY, state.language)
       dispatch({ type: 'SET_GRID', payload: result.grid })
       dispatch({ type: 'SET_SOLUTION_GRID', payload: result.solutionGrid })
+      dispatch({ type: 'SET_PLACEMENTS', payload: result.placements })
       dispatch({ type: 'SET_IS_GENERATED', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
     } catch (err) {
       dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Unknown error' })
       dispatch({ type: 'SET_GRID', payload: null })
       dispatch({ type: 'SET_SOLUTION_GRID', payload: null })
+      dispatch({ type: 'SET_PLACEMENTS', payload: [] })
       dispatch({ type: 'SET_IS_GENERATED', payload: false })
     } finally {
       dispatch({ type: 'SET_IS_GENERATING', payload: false })

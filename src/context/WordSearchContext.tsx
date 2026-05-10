@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useReducer } from 'react'
 import type { ReactNode } from 'react'
-import type { WordSearchState, Direction, Language, GridStyle, Cell } from '@/types'
+import type { WordSearchState, WordPlacement, Direction, Language, GridStyle, Cell } from '@/types'
 
 const STORAGE_KEY = 'word-search-state-v2'
 
@@ -53,6 +53,7 @@ const initialState: WordSearchState = {
   customFontUrl: '',
   useLocalFont: false,
   localFontFamily: '',
+  placements: [],
   grid: null,
   solutionGrid: null,
   isGenerated: false,
@@ -75,6 +76,7 @@ type WordSearchAction =
   | { type: 'SET_CUSTOM_FONT_URL'; payload: string }
   | { type: 'SET_USE_LOCAL_FONT'; payload: boolean }
   | { type: 'SET_LOCAL_FONT_FAMILY'; payload: string }
+  | { type: 'SET_PLACEMENTS'; payload: WordPlacement[] }
   | { type: 'SET_GRID'; payload: Cell[][] | null }
   | { type: 'SET_SOLUTION_GRID'; payload: Cell[][] | null }
   | { type: 'SET_IS_GENERATED'; payload: boolean }
@@ -112,6 +114,8 @@ function reducer(state: WordSearchState, action: WordSearchAction): WordSearchSt
       return { ...state, useLocalFont: action.payload }
     case 'SET_LOCAL_FONT_FAMILY':
       return { ...state, localFontFamily: action.payload }
+    case 'SET_PLACEMENTS':
+      return { ...state, placements: action.payload }
     case 'SET_GRID':
       return { ...state, grid: action.payload }
     case 'SET_SOLUTION_GRID':

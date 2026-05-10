@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Cell } from '@/types'
+import type { Cell, WordPlacement, Direction } from '@/types'
 
 interface WordPath {
   x1: number
@@ -8,35 +8,37 @@ interface WordPath {
   y2: number
 }
 
-function buildWordPaths(grid: Cell[][], cellSize: number): WordPath[] {
-  const wordMap = new Map<number, { x: number; y: number }[]>()
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      const idx = grid[y][x].wordIndex
-      if (idx !== null) {
-        if (!wordMap.has(idx)) wordMap.set(idx, [])
-        wordMap.get(idx)!.push({ x, y })
-      }
+const DIRECTION_OFFSETS: Record<Direction, { dx: number; dy: number }> = {
+  up: { dx: 0, dy: -1 },
+  down: { dx: 0, dy: 1 },
+  left: { dx: -1, dy: 0 },
+  right: { dx: 1, dy: 0 },
+  'up-left': { dx: -1, dy: -1 },
+  'up-right': { dx: 1, dy: -1 },
+  'down-left': { dx: -1, dy: 1 },
+  'down-right': { dx: 1, dy: 1 },
+}
+
+function buildWordPaths(placements: WordPlacement[], words: string[], cellSize: number): WordPath[] {
+  return placements.map((p) => {
+    const word = words[p.index] ?? ''
+    const len = word.length
+    const { dx, dy } = DIRECTION_OFFSETS[p.direction]
+    const ex = p.startX + (len - 1) * dx
+    const ey = p.startY + (len - 1) * dy
+    return {
+      x1: p.startX * cellSize + cellSize / 2,
+      y1: p.startY * cellSize + cellSize / 2,
+      x2: ex * cellSize + cellSize / 2,
+      y2: ey * cellSize + cellSize / 2,
     }
-  }
-  const paths: WordPath[] = []
-  for (const [, positions] of wordMap) {
-    if (positions.length < 2) continue
-    positions.sort((a, b) => (a.y - b.y) || (a.x - b.x))
-    const s = positions[0]
-    const e = positions[positions.length - 1]
-    paths.push({
-      x1: s.x * cellSize + cellSize / 2,
-      y1: s.y * cellSize + cellSize / 2,
-      x2: e.x * cellSize + cellSize / 2,
-      y2: e.y * cellSize + cellSize / 2,
-    })
-  }
-  return paths
+  })
 }
 
 interface WordSearchGridProps {
   grid: Cell[][] | null
+  words: string[]
+  placements: WordPlacement[]
   fontFamily: string
   fontSize: number
   highlightColor: string
@@ -47,6 +49,8 @@ interface WordSearchGridProps {
 
 export function WordSearchGrid({
   grid,
+  words,
+  placements,
   fontFamily,
   fontSize,
   highlightColor,
@@ -57,9 +61,9 @@ export function WordSearchGrid({
   const cellSize = fontSize + 8
 
   const wordPaths = useMemo(() => {
-    if (!grid || !showAnswers) return []
-    return buildWordPaths(grid, cellSize)
-  }, [grid, showAnswers, cellSize])
+    if (!grid || !showAnswers || placements.length === 0) return []
+    return buildWordPaths(placements, words, cellSize)
+  }, [grid, showAnswers, placements, words, cellSize])
 
   if (!grid) return null
 

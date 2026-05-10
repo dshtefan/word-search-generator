@@ -18,6 +18,13 @@ export interface Cell {
   wordIndex: number | null
 }
 
+export interface WordPlacement {
+  index: number
+  startX: number
+  startY: number
+  direction: Direction
+}
+
 export interface WordSearchState {
   words: string[]
   language: Language
@@ -33,6 +40,7 @@ export interface WordSearchState {
   customFontUrl: string
   useLocalFont: boolean
   localFontFamily: string
+  placements: WordPlacement[]
   grid: Cell[][] | null
   solutionGrid: Cell[][] | null
   isGenerated: boolean
