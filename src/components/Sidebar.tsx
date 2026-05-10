@@ -4,6 +4,7 @@ import { WordsInput } from "@/components/WordsInput"
 import { GridSizeInputs } from "@/components/GridSizeInputs"
 import { MultiSelect } from "@/components/MultiSelect"
 import { SaveModal } from "@/components/SaveModal"
+import { SystemFontPicker } from "@/components/SystemFontPicker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -231,7 +232,7 @@ function Sidebar() {
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="font-family">Font</Label>
-              {!state.useCustomFont && (
+              {!state.useCustomFont && !state.useLocalFont && (
                 <Select
                   value={state.fontFamily}
                   onValueChange={(value) =>
@@ -269,6 +270,26 @@ function Sidebar() {
                       dispatch({ type: "SET_CUSTOM_FONT_URL", payload: e.target.value })
                     }
                     className="h-8 text-xs"
+                  />
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="flex items-center gap-2 font-normal cursor-pointer">
+                  <Checkbox
+                    checked={state.useLocalFont}
+                    onCheckedChange={(v) =>
+                      dispatch({ type: "SET_USE_LOCAL_FONT", payload: !!v })
+                    }
+                  />
+                  System font
+                </Label>
+                {state.useLocalFont && (
+                  <SystemFontPicker
+                    value={state.localFontFamily}
+                    onChange={(family) => {
+                      dispatch({ type: "SET_LOCAL_FONT_FAMILY", payload: family })
+                      dispatch({ type: "SET_FONT_FAMILY", payload: family })
+                    }}
                   />
                 )}
               </div>

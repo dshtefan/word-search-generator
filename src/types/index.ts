@@ -31,6 +31,8 @@ export interface WordSearchState {
   gridStyle: GridStyle
   useCustomFont: boolean
   customFontUrl: string
+  useLocalFont: boolean
+  localFontFamily: string
   grid: Cell[][] | null
   solutionGrid: Cell[][] | null
   isGenerated: boolean

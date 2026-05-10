@@ -10,6 +10,8 @@ export interface ExportOptions {
   highlightColor?: string
   fontFamily?: string
   customFontUrl?: string
+  useLocalFont?: boolean
+  localFontFamily?: string
 }
 
 function getGridTable(tableId = "word-search-grid-with-answers"): HTMLTableElement | null {
@@ -154,7 +156,7 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   const scaleY = targetH / naturalH
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${fontSizePx}px">`
-  svg += getFontStyle(fontFamily, opts?.customFontUrl)
+  svg += getFontStyle(fontFamily, opts)
   svg += `<g transform="scale(${scaleX},${scaleY})">`
 
   if (drawWordLines) {
@@ -189,9 +191,12 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   return svg
 }
 
-function getFontStyle(fontFamily: string, customFontUrl?: string): string {
-  if (customFontUrl) {
-    return `<style><![CDATA[@import url('${customFontUrl}');]]></style>`
+function getFontStyle(fontFamily: string, opts?: ExportOptions): string {
+  if (opts?.customFontUrl) {
+    return `<style><![CDATA[@import url('${opts.customFontUrl}');]]></style>`
+  }
+  if (opts?.useLocalFont && opts?.localFontFamily) {
+    return `<style><![CDATA[@font-face { font-family: '${opts.localFontFamily}'; src: local('${opts.localFontFamily}'); }]]></style>`
   }
   const googleFonts: Record<string, string> = {
     Inter: "Inter:wght@400;500;600",

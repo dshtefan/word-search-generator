@@ -73,6 +73,10 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
       opts.highlightColor = state.highlightColor
       opts.fontFamily = state.fontFamily
       if (state.useCustomFont) opts.customFontUrl = state.customFontUrl
+      if (state.useLocalFont) {
+        opts.useLocalFont = true
+        opts.localFontFamily = state.localFontFamily
+      }
       opts.solutionGrid = state.solutionGrid ?? undefined
       if (downloadBoth) opts.both = true
       if (useResolution) opts.resolution = { w: resW, h: resH }
