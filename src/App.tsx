@@ -11,6 +11,9 @@ function App() {
           <Preview />
         </main>
       </div>
+      <span className="pointer-events-none fixed bottom-2 right-3 select-none text-xs text-muted-foreground/40">
+        v{__APP_VERSION__}
+      </span>
     </WordSearchProvider>
   )
 }
