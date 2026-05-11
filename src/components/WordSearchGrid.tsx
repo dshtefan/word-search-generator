@@ -19,7 +19,7 @@ const DIRECTION_OFFSETS: Record<Direction, { dx: number; dy: number }> = {
   'down-right': { dx: 1, dy: 1 },
 }
 
-function buildWordPaths(placements: WordPlacement[], words: string[], cellW: number, cellH: number): WordPath[] {
+function buildWordPaths(placements: WordPlacement[], cellW: number, cellH: number): WordPath[] {
   return placements.map((p) => {
     const len = p.wordText.length
     const { dx, dy } = DIRECTION_OFFSETS[p.direction]
@@ -70,7 +70,7 @@ export function WordSearchGrid({
 
   const wordPaths = useMemo(() => {
     if (!grid || !showAnswers || placements.length === 0) return []
-    return buildWordPaths(placements, words, cellW, cellH)
+    return buildWordPaths(placements, cellW, cellH)
   }, [grid, showAnswers, placements, words, cellW, cellH])
 
   if (!grid) return null

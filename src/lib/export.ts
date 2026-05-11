@@ -50,7 +50,7 @@ const DIR_MAP: Record<string, { dx: number; dy: number }> = {
   'down-right': { dx: 1, dy: 1 },
 }
 
-function buildWordLinesFromPlacements(placements: WordPlacement[], words: string[], cellWidth: number, cellHeight: number): WordLine[] {
+function buildWordLinesFromPlacements(placements: WordPlacement[], cellWidth: number, cellHeight: number): WordLine[] {
   return placements.map((p) => {
     const len = p.wordText.length
     const { dx, dy } = DIR_MAP[p.direction]
@@ -139,7 +139,7 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
 
   let effectiveWordLines = wordLines
   if (drawWordLines && effectiveWordLines.length === 0 && opts?.both && opts?.placements && opts?.words) {
-    effectiveWordLines = buildWordLinesFromPlacements(opts.placements, opts.words, cellWidth, cellHeight)
+    effectiveWordLines = buildWordLinesFromPlacements(opts.placements, cellWidth, cellHeight)
   }
 
   const naturalW = cols * cellWidth
@@ -254,7 +254,7 @@ export function buildSvgFromSaved(
   const gridStyle = gen.gridStyle
 
   const effectiveWordLines = drawWordLines && gen.placements.length > 0
-    ? buildWordLinesFromPlacements(gen.placements, gen.words, cellSize, cellSize)
+    ? buildWordLinesFromPlacements(gen.placements, cellSize, cellSize)
     : []
 
   const naturalW = cols * cellSize
