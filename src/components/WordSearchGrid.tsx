@@ -90,6 +90,8 @@ export function WordSearchGrid({
   const cellClassName =
     gridStyle === 'full' ? 'border border-gray-300' : ''
 
+  const borderOffset = gridStyle === 'outer' ? 2 : 0
+
   return (
     <div className="relative inline-block">
       <table id={tableId} data-grid-style={gridStyle} data-highlight-color={highlightColor} className={tableClassName}>
@@ -119,7 +121,8 @@ export function WordSearchGrid({
       </table>
       {showAnswers && wordPaths.length > 0 && (
         <svg
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute"
+          style={{ top: borderOffset, left: borderOffset }}
           width={svgW}
           height={svgH}
         >
