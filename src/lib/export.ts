@@ -167,7 +167,7 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
 
   const fontAttrs = getFontStyleAttrs(opts)
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${fontSizePx}px">`
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${fontSizePx}px">`
   svg += getFontStyle(fontFamily, opts)
   svg += `<g transform="scale(${scaleX},${scaleY})">`
 
