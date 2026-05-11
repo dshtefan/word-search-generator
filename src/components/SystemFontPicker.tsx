@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { SearchIcon } from "lucide-react"
+import { RefreshCwIcon, SearchIcon } from "lucide-react"
 
 interface SystemFontPickerProps {
   value: string
@@ -17,7 +17,6 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
   const [search, setSearch] = useState("")
 
   const loadFonts = useCallback(async () => {
-    if (fonts.length > 0) return
     setLoading(true)
     try {
       const result = await window.queryLocalFonts()
@@ -32,7 +31,12 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
     } finally {
       setLoading(false)
     }
-  }, [fonts.length])
+  }, [])
+
+  function refreshFonts() {
+    setFonts([])
+    loadFonts()
+  }
 
   const filtered = search
     ? fonts.filter((f) => f.family.toLowerCase().includes(search.toLowerCase()))
@@ -51,14 +55,26 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
         {value || "Choose a system font..."}
       </PopoverTrigger>
       <PopoverContent className="w-72 p-2" align="start">
-        <div className="relative mb-1.5">
-          <SearchIcon className="absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-7 pl-7 pr-2 text-xs"
-            placeholder="Search fonts..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex items-center gap-1 mb-1.5">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-7 pl-7 pr-2 text-xs"
+              placeholder="Search fonts..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 shrink-0"
+            onClick={refreshFonts}
+            disabled={loading}
+            title="Refresh system fonts"
+          >
+            <RefreshCwIcon className={cn("size-3", loading && "animate-spin")} />
+          </Button>
         </div>
         {loading && <p className="py-2 text-center text-xs text-muted-foreground">Loading fonts...</p>}
         <div className="max-h-64 overflow-y-auto">

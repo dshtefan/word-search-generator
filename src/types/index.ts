@@ -47,3 +47,17 @@ export interface WordSearchState {
   isGenerating: boolean
   error: string | null
 }
+
+export interface SavedGeneration {
+  id: string
+  name: string
+  grid: Cell[][] | null
+  solutionGrid: Cell[][] | null
+  placements: WordPlacement[]
+  words: string[]
+  fontFamily: string
+  fontSize: number
+  highlightColor: string
+  gridStyle: GridStyle
+  createdAt: number
+}

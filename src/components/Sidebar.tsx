@@ -4,6 +4,7 @@ import { WordsInput } from "@/components/WordsInput"
 import { GridSizeInputs } from "@/components/GridSizeInputs"
 import { MultiSelect } from "@/components/MultiSelect"
 import { SaveModal } from "@/components/SaveModal"
+import { SaveGenerationModal } from "@/components/SaveGenerationModal"
 import { SystemFontPicker } from "@/components/SystemFontPicker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -75,6 +76,7 @@ const DIAGONAL_OPTIONS = [
 function Sidebar() {
   const { state, dispatch } = useWordSearch()
   const [saveOpen, setSaveOpen] = useState(false)
+  const [saveGenOpen, setSaveGenOpen] = useState(false)
 
   useCustomFont(state.useCustomFont, state.customFontUrl, (name) => {
     dispatch({ type: "SET_FONT_FAMILY", payload: name })
@@ -366,6 +368,13 @@ function Sidebar() {
             </div>
           )}
           <Button
+            variant="secondary"
+            disabled={!state.isGenerated}
+            onClick={() => setSaveGenOpen(true)}
+          >
+            Save generation
+          </Button>
+          <Button
             variant="outline"
             disabled={!state.isGenerated}
             onClick={() => setSaveOpen(true)}
@@ -381,6 +390,7 @@ function Sidebar() {
           </Button>
         </CardContent>
       </Card>
+      <SaveGenerationModal open={saveGenOpen} onOpenChange={setSaveGenOpen} />
       <SaveModal open={saveOpen} onOpenChange={setSaveOpen} />
     </aside>
   )

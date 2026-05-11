@@ -1,6 +1,7 @@
 import { WordSearchProvider } from "@/context/WordSearchContext"
 import { Sidebar } from "@/components/Sidebar"
 import { Preview } from "@/components/Preview"
+import { SavedPanel } from "@/components/SavedPanel"
 
 function App() {
   return (
@@ -11,9 +12,12 @@ function App() {
           <Preview />
         </main>
       </div>
-      <span className="pointer-events-none fixed bottom-2 right-3 select-none text-xs text-muted-foreground/40">
+      <div className="pointer-events-none fixed top-2 right-3 select-none text-xs text-muted-foreground/40 text-gray-400">
         v{__APP_VERSION__}
-      </span>
+      </div>
+      <div className="fixed bottom-2 right-12">
+        <SavedPanel />
+      </div>
     </WordSearchProvider>
   )
 }

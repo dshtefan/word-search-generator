@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useReducer } from 'react'
+import { createContext, useContext, useEffect, useReducer, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
-import type { WordSearchState, WordPlacement, Direction, Language, GridStyle, Cell } from '@/types'
+import type { WordSearchState, SavedGeneration, WordPlacement, Direction, Language, GridStyle, Cell } from '@/types'
 
 const STORAGE_KEY = 'word-search-state-v2'
 
@@ -32,6 +32,22 @@ function saveState(state: WordSearchState) {
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   } catch { /* ignore quota errors */ }
+}
+
+const SAVED_STORAGE_KEY = 'word-search-saved'
+
+function loadSaved(): SavedGeneration[] {
+  try {
+    const raw = localStorage.getItem(SAVED_STORAGE_KEY)
+    if (raw) return JSON.parse(raw) as SavedGeneration[]
+  } catch { /* ignore */ }
+  return []
+}
+
+function saveSaved(sg: SavedGeneration[]) {
+  try {
+    localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(sg))
+  } catch { /* ignore */ }
 }
 
 export function clearSavedState() {
@@ -136,6 +152,10 @@ function reducer(state: WordSearchState, action: WordSearchAction): WordSearchSt
 interface WordSearchContextValue {
   state: WordSearchState
   dispatch: React.Dispatch<WordSearchAction>
+  savedGenerations: SavedGeneration[]
+  addSaved: (sg: SavedGeneration) => void
+  removeSaved: (id: string) => void
+  applySaved: (sg: SavedGeneration) => void
 }
 
 const WordSearchContext = createContext<WordSearchContextValue | null>(null)
@@ -143,13 +163,39 @@ const WordSearchContext = createContext<WordSearchContextValue | null>(null)
 export function WordSearchProvider({ children }: { children: ReactNode }) {
   const saved = loadState()
   const [state, dispatch] = useReducer(reducer, { ...initialState, ...saved })
+  const [savedGenerations, setSavedGenerations] = useState<SavedGeneration[]>(loadSaved())
 
   useEffect(() => {
     saveState(state)
   }, [state])
 
+  useEffect(() => {
+    saveSaved(savedGenerations)
+  }, [savedGenerations])
+
+  const addSaved = useCallback((sg: SavedGeneration) => {
+    setSavedGenerations(prev => [...prev, sg])
+  }, [])
+
+  const removeSaved = useCallback((id: string) => {
+    setSavedGenerations(prev => prev.filter(sg => sg.id !== id))
+  }, [])
+
+  const applySaved = useCallback((sg: SavedGeneration) => {
+    dispatch({ type: 'SET_GRID', payload: sg.grid })
+    dispatch({ type: 'SET_SOLUTION_GRID', payload: sg.solutionGrid })
+    dispatch({ type: 'SET_PLACEMENTS', payload: sg.placements })
+    dispatch({ type: 'SET_WORDS', payload: sg.words })
+    dispatch({ type: 'SET_FONT_FAMILY', payload: sg.fontFamily })
+    dispatch({ type: 'SET_FONT_SIZE', payload: sg.fontSize })
+    dispatch({ type: 'SET_HIGHLIGHT_COLOR', payload: sg.highlightColor })
+    dispatch({ type: 'SET_GRID_STYLE', payload: sg.gridStyle })
+    dispatch({ type: 'SET_IS_GENERATED', payload: true })
+    dispatch({ type: 'SET_ERROR', payload: null })
+  }, [dispatch])
+
   return (
-    <WordSearchContext.Provider value={{ state, dispatch }}>
+    <WordSearchContext.Provider value={{ state, dispatch, savedGenerations, addSaved, removeSaved, applySaved }}>
       {children}
     </WordSearchContext.Provider>
   )

@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { useWordSearch } from "@/context/WordSearchContext"
-import { exportSVG, exportPNG, exportPDF } from "@/lib/export"
+import { exportSVG, exportPNG, exportPDF, exportSavedSVG, exportSavedPNG, exportSavedPDF } from "@/lib/export"
 import type { ExportOptions } from "@/lib/export"
+import type { SavedGeneration } from "@/types"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,8 @@ import {
 interface SaveModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  mode?: "current" | "saved"
+  savedList?: SavedGeneration[]
 }
 
 type Format = "svg" | "png" | "pdf"
@@ -49,7 +52,7 @@ const RATIO_PRESETS: { label: string; w: number; h: number }[] = [
   { label: "1:2 (Tall)", w: 1, h: 2 },
 ]
 
-export function SaveModal({ open, onOpenChange }: SaveModalProps) {
+export function SaveModal({ open, onOpenChange, mode = "current", savedList = [] }: SaveModalProps) {
   const { state } = useWordSearch()
   const [format, setFormat] = useState<Format>("svg")
   const [isExporting, setIsExporting] = useState(false)
@@ -68,6 +71,29 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
   async function handleSave() {
     setIsExporting(true)
     try {
+      const isSavedMode = mode === "saved"
+
+      if (isSavedMode) {
+        const opts: ExportOptions = {}
+        if (useResolution) opts.resolution = { w: resW, h: resH }
+        if (useAspectRatio) opts.aspectRatio = { w: ratioW, h: ratioH }
+        for (const gen of savedList) {
+          switch (format) {
+            case "svg":
+              exportSavedSVG(gen, gen.name, opts)
+              break
+            case "png":
+              await exportSavedPNG(gen, gen.name, opts)
+              break
+            case "pdf":
+              await exportSavedPDF(gen, gen.name, opts)
+              break
+          }
+        }
+        onOpenChange(false)
+        return
+      }
+
       const opts: ExportOptions = {}
       opts.filename = filename || "ws"
       opts.highlightColor = state.highlightColor
@@ -95,6 +121,7 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
           await exportPDF(opts)
           break
       }
+      onOpenChange(false)
     } catch (err) {
       console.error("Export failed:", err)
     } finally {
@@ -108,7 +135,7 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
         <DialogHeader>
           <DialogTitle>Save Word Search</DialogTitle>
           <DialogDescription>
-            Choose a format and download the current word search grid.
+            {mode === "saved" ? `Export ${savedList.length} saved generation${savedList.length !== 1 ? "s" : ""}.` : "Choose a format and download the current word search grid."}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
@@ -126,17 +153,19 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="filename-input">File name</Label>
-            <Input
-              id="filename-input"
-              type="text"
-              value={filename}
-              onChange={(e) => setFilename(e.target.value)}
-              placeholder="ws"
-              className="h-8 text-sm"
-            />
-          </div>
+          {mode === "current" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="filename-input">File name</Label>
+              <Input
+                id="filename-input"
+                type="text"
+                value={filename}
+                onChange={(e) => setFilename(e.target.value)}
+                placeholder="ws"
+                className="h-8 text-sm"
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <Label className="flex items-center gap-2 font-normal cursor-pointer">
@@ -233,22 +262,24 @@ export function SaveModal({ open, onOpenChange }: SaveModalProps) {
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label className="flex items-center gap-2 font-normal cursor-pointer">
-              <Checkbox
-                checked={downloadBoth}
-                onCheckedChange={setDownloadBoth}
-              />
-              Download both (with & without answers)
-            </Label>
-          </div>
+          {mode === "current" && (
+            <div className="flex flex-col gap-2">
+              <Label className="flex items-center gap-2 font-normal cursor-pointer">
+                <Checkbox
+                  checked={downloadBoth}
+                  onCheckedChange={setDownloadBoth}
+                />
+                Download both (with & without answers)
+              </Label>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!state.isGenerated || isExporting}>
-            {isExporting ? "Saving..." : "Save"}
+          <Button onClick={handleSave} disabled={(mode === "current" && !state.isGenerated) || (mode === "saved" && savedList.length === 0) || isExporting}>
+            {isExporting ? "Saving..." : mode === "saved" ? `Export ${savedList.length} generation${savedList.length !== 1 ? "s" : ""}` : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

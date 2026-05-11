@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf"
-import type { Cell, WordPlacement } from "@/types"
+import type { Cell, WordPlacement, SavedGeneration } from "@/types"
 
 export interface ExportOptions {
   resolution?: { w: number; h: number }
@@ -224,6 +224,189 @@ function getFontStyle(fontFamily: string, opts?: ExportOptions): string {
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
+
+export function buildSvgFromSaved(
+  gen: SavedGeneration,
+  opts: ExportOptions | undefined,
+  drawWordLines: boolean
+): string | null {
+  const grid = drawWordLines ? gen.solutionGrid : gen.grid
+  if (!grid || grid.length === 0 || grid[0].length === 0) return null
+
+  const rows = grid.length
+  const cols = grid[0].length
+  const cellSize = gen.fontSize + 8
+  const fontFamily = gen.fontFamily
+  const highlightColor = gen.highlightColor
+  const gridStyle = gen.gridStyle
+
+  const effectiveWordLines = drawWordLines && gen.placements.length > 0
+    ? buildWordLinesFromPlacements(gen.placements, gen.words, cellSize, cellSize)
+    : []
+
+  const naturalW = cols * cellSize
+  const naturalH = rows * cellSize
+
+  let targetW = naturalW
+  let targetH = naturalH
+
+  if (opts?.resolution) {
+    targetW = opts.resolution.w
+    targetH = opts.resolution.h
+  } else if (opts?.aspectRatio) {
+    const targetRatio = opts.aspectRatio.w / opts.aspectRatio.h
+    const currentRatio = naturalW / naturalH
+    if (currentRatio > targetRatio) {
+      targetH = naturalW / targetRatio
+    } else {
+      targetW = naturalH * targetRatio
+    }
+  }
+
+  const scaleX = targetW / naturalW
+  const scaleY = targetH / naturalH
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${gen.fontSize}px">`
+  svg += getFontStyle(fontFamily, opts)
+  svg += `<g transform="scale(${scaleX},${scaleY})">`
+
+  if (drawWordLines) {
+    for (const wl of effectiveWordLines) {
+      svg += `<line x1="${wl.x1}" y1="${wl.y1}" x2="${wl.x2}" y2="${wl.y2}" stroke="${escapeXml(highlightColor)}" stroke-width="${cellSize * 0.7}" stroke-linecap="round" opacity="0.6" />`
+    }
+  }
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = grid[r][c]
+      const cx = c * cellSize + cellSize / 2
+      const cy = r * cellSize + cellSize / 2
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000" font-family="${escapeXml(fontFamily)}">${escapeXml(cell.letter)}</text>`
+    }
+  }
+
+  if (gridStyle === "full") {
+    for (let r = 1; r < rows; r++) {
+      const y = r * cellSize
+      svg += `<line x1="0" y1="${y}" x2="${cols * cellSize}" y2="${y}" stroke="#d1d5db" stroke-width="1" />`
+    }
+    for (let c = 1; c < cols; c++) {
+      const x = c * cellSize
+      svg += `<line x1="${x}" y1="0" x2="${x}" y2="${rows * cellSize}" stroke="#d1d5db" stroke-width="1" />`
+    }
+  } else if (gridStyle === "outer") {
+    svg += `<rect x="0" y="0" width="${cols * cellSize}" height="${rows * cellSize}" fill="none" stroke="#9ca3af" stroke-width="2" />`
+  }
+
+  svg += `</g></svg>`
+  return svg
+}
+
+export function exportSavedSVG(gen: SavedGeneration, filename: string, opts?: ExportOptions): void {
+  const svgAnswers = buildSvgFromSaved(gen, opts, true)
+  if (svgAnswers) {
+    downloadBlob(new Blob([svgAnswers], { type: "image/svg+xml" }), `${filename}-answers.svg`)
+  }
+  const svgNoAnswers = buildSvgFromSaved(gen, opts, false)
+  if (svgNoAnswers) {
+    downloadBlob(new Blob([svgNoAnswers], { type: "image/svg+xml" }), `${filename}.svg`)
+  }
+}
+
+export async function exportSavedPNG(gen: SavedGeneration, filename: string, opts?: ExportOptions): Promise<void> {
+  await exportSavedPNGSingle(gen, opts, true, `${filename}-answers.png`)
+  await exportSavedPNGSingle(gen, opts, false, `${filename}.png`)
+}
+
+async function exportSavedPNGSingle(gen: SavedGeneration, opts: ExportOptions | undefined, drawWordLines: boolean, filename: string): Promise<void> {
+  const svg = buildSvgFromSaved(gen, opts, drawWordLines)
+  if (!svg) return
+
+  const svgBlob = new Blob([svg], { type: "image/svg+xml" })
+  const url = URL.createObjectURL(svgBlob)
+
+  return new Promise<void>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      if (opts?.resolution) {
+        canvas.width = opts.resolution.w
+        canvas.height = opts.resolution.h
+      } else {
+        canvas.width = img.width
+        canvas.height = img.height
+      }
+      const ctx = canvas.getContext("2d")!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => {
+        if (blob) downloadBlob(blob, filename)
+        URL.revokeObjectURL(url)
+        resolve()
+      }, "image/png")
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("Failed to load SVG image for PNG export"))
+    }
+    img.src = url
+  })
+}
+
+export async function exportSavedPDF(gen: SavedGeneration, filename: string, opts?: ExportOptions): Promise<void> {
+  await exportSavedPDFSingle(gen, opts, true, `${filename}-answers.pdf`)
+  await exportSavedPDFSingle(gen, opts, false, `${filename}.pdf`)
+}
+
+async function exportSavedPDFSingle(gen: SavedGeneration, opts: ExportOptions | undefined, drawWordLines: boolean, filename: string): Promise<void> {
+  const svg = buildSvgFromSaved(gen, opts, drawWordLines)
+  if (!svg) return
+
+  const svgBlob = new Blob([svg], { type: "image/svg+xml" })
+  const url = URL.createObjectURL(svgBlob)
+
+  return new Promise<void>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext("2d")!
+      ctx.drawImage(img, 0, 0)
+
+      const pngData = canvas.toDataURL("image/png")
+
+      const orientation = img.width > img.height ? "landscape" : "portrait"
+      const pdf = new jsPDF({ orientation, unit: "mm", format: "a4" })
+
+      const pageW = pdf.internal.pageSize.getWidth()
+      const pageH = pdf.internal.pageSize.getHeight()
+      const margin = 10
+      const maxW = pageW - margin * 2
+      const maxH = pageH - margin * 2
+
+      let drawW = img.width
+      let drawH = img.height
+      if (drawW > maxW || drawH > maxH) {
+        const scale = Math.min(maxW / drawW, maxH / drawH)
+        drawW *= scale
+        drawH *= scale
+      }
+
+      const x = (pageW - drawW) / 2
+      const y = (pageH - drawH) / 2
+      pdf.addImage(pngData, "PNG", x, y, drawW, drawH)
+      pdf.save(filename)
+
+      URL.revokeObjectURL(url)
+      resolve()
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("Failed to load SVG image for PDF export"))
+    }
+    img.src = url
+  })
 }
 
 function downloadBlob(blob: Blob, filename: string) {
