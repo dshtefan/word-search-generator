@@ -29,6 +29,14 @@ function saveState(state: WordSearchState) {
       customFontUrl: state.customFontUrl,
       useLocalFont: state.useLocalFont,
       localFontFamily: state.localFontFamily,
+      localFontFullName: state.localFontFullName,
+      localFontStyle: state.localFontStyle,
+      useResolution: state.useResolution,
+      resolutionW: state.resolutionW,
+      resolutionH: state.resolutionH,
+      useAspectRatio: state.useAspectRatio,
+      aspectRatioW: state.aspectRatioW,
+      aspectRatioH: state.aspectRatioH,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   } catch { /* ignore quota errors */ }
@@ -69,12 +77,20 @@ const initialState: WordSearchState = {
   customFontUrl: '',
   useLocalFont: false,
   localFontFamily: '',
+  localFontFullName: '',
+  localFontStyle: '',
   placements: [],
   grid: null,
   solutionGrid: null,
   isGenerated: false,
   isGenerating: false,
   error: null,
+  useResolution: false,
+  resolutionW: 1024,
+  resolutionH: 768,
+  useAspectRatio: false,
+  aspectRatioW: 16,
+  aspectRatioH: 9,
 }
 
 type WordSearchAction =
@@ -92,12 +108,20 @@ type WordSearchAction =
   | { type: 'SET_CUSTOM_FONT_URL'; payload: string }
   | { type: 'SET_USE_LOCAL_FONT'; payload: boolean }
   | { type: 'SET_LOCAL_FONT_FAMILY'; payload: string }
+  | { type: 'SET_LOCAL_FONT_FULLNAME'; payload: string }
+  | { type: 'SET_LOCAL_FONT_STYLE'; payload: string }
   | { type: 'SET_PLACEMENTS'; payload: WordPlacement[] }
   | { type: 'SET_GRID'; payload: Cell[][] | null }
   | { type: 'SET_SOLUTION_GRID'; payload: Cell[][] | null }
   | { type: 'SET_IS_GENERATED'; payload: boolean }
   | { type: 'SET_IS_GENERATING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_USE_RESOLUTION'; payload: boolean }
+  | { type: 'SET_RESOLUTION_W'; payload: number }
+  | { type: 'SET_RESOLUTION_H'; payload: number }
+  | { type: 'SET_USE_ASPECT_RATIO'; payload: boolean }
+  | { type: 'SET_ASPECT_RATIO_W'; payload: number }
+  | { type: 'SET_ASPECT_RATIO_H'; payload: number }
   | { type: 'RESET' }
 
 function reducer(state: WordSearchState, action: WordSearchAction): WordSearchState {
@@ -130,6 +154,10 @@ function reducer(state: WordSearchState, action: WordSearchAction): WordSearchSt
       return { ...state, useLocalFont: action.payload }
     case 'SET_LOCAL_FONT_FAMILY':
       return { ...state, localFontFamily: action.payload }
+    case 'SET_LOCAL_FONT_FULLNAME':
+      return { ...state, localFontFullName: action.payload }
+    case 'SET_LOCAL_FONT_STYLE':
+      return { ...state, localFontStyle: action.payload }
     case 'SET_PLACEMENTS':
       return { ...state, placements: action.payload }
     case 'SET_GRID':
@@ -142,6 +170,18 @@ function reducer(state: WordSearchState, action: WordSearchAction): WordSearchSt
       return { ...state, isGenerating: action.payload }
     case 'SET_ERROR':
       return { ...state, error: action.payload }
+    case 'SET_USE_RESOLUTION':
+      return { ...state, useResolution: action.payload, useAspectRatio: action.payload ? false : state.useAspectRatio }
+    case 'SET_RESOLUTION_W':
+      return { ...state, resolutionW: action.payload }
+    case 'SET_RESOLUTION_H':
+      return { ...state, resolutionH: action.payload }
+    case 'SET_USE_ASPECT_RATIO':
+      return { ...state, useAspectRatio: action.payload, useResolution: action.payload ? false : state.useResolution }
+    case 'SET_ASPECT_RATIO_W':
+      return { ...state, aspectRatioW: action.payload }
+    case 'SET_ASPECT_RATIO_H':
+      return { ...state, aspectRatioH: action.payload }
     case 'RESET':
       return initialState
     default:
@@ -190,6 +230,18 @@ export function WordSearchProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_FONT_SIZE', payload: sg.fontSize })
     dispatch({ type: 'SET_HIGHLIGHT_COLOR', payload: sg.highlightColor })
     dispatch({ type: 'SET_GRID_STYLE', payload: sg.gridStyle })
+    dispatch({ type: 'SET_USE_CUSTOM_FONT', payload: sg.useCustomFont })
+    dispatch({ type: 'SET_CUSTOM_FONT_URL', payload: sg.customFontUrl })
+    dispatch({ type: 'SET_USE_LOCAL_FONT', payload: sg.useLocalFont })
+    dispatch({ type: 'SET_LOCAL_FONT_FAMILY', payload: sg.localFontFamily })
+    dispatch({ type: 'SET_LOCAL_FONT_FULLNAME', payload: sg.localFontFullName })
+    dispatch({ type: 'SET_LOCAL_FONT_STYLE', payload: sg.localFontStyle })
+    dispatch({ type: 'SET_USE_RESOLUTION', payload: sg.useResolution })
+    dispatch({ type: 'SET_RESOLUTION_W', payload: sg.resolutionW })
+    dispatch({ type: 'SET_RESOLUTION_H', payload: sg.resolutionH })
+    dispatch({ type: 'SET_USE_ASPECT_RATIO', payload: sg.useAspectRatio })
+    dispatch({ type: 'SET_ASPECT_RATIO_W', payload: sg.aspectRatioW })
+    dispatch({ type: 'SET_ASPECT_RATIO_H', payload: sg.aspectRatioH })
     dispatch({ type: 'SET_IS_GENERATED', payload: true })
     dispatch({ type: 'SET_ERROR', payload: null })
   }, [dispatch])

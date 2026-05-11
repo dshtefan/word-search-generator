@@ -14,6 +14,7 @@ export interface ExportOptions {
   customFontUrl?: string
   useLocalFont?: boolean
   localFontFamily?: string
+  localFontStyle?: string
 }
 
 function getGridTable(tableId = "word-search-grid-with-answers"): HTMLTableElement | null {
@@ -138,7 +139,7 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   const highlightColor = opts?.highlightColor || table?.getAttribute("data-highlight-color") || "#90a4ae"
 
   let effectiveWordLines = wordLines
-  if (drawWordLines && effectiveWordLines.length === 0 && opts?.placements && opts?.words) {
+  if (drawWordLines && effectiveWordLines.length === 0 && opts?.both && opts?.placements && opts?.words) {
     effectiveWordLines = buildWordLinesFromPlacements(opts.placements, opts.words, cellWidth, cellHeight)
   }
 
@@ -164,7 +165,9 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
   const scaleX = targetW / naturalW
   const scaleY = targetH / naturalH
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${fontSizePx}px">`
+  const fontAttrs = getFontStyleAttrs(opts)
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${fontSizePx}px">`
   svg += getFontStyle(fontFamily, opts)
   svg += `<g transform="scale(${scaleX},${scaleY})">`
 
@@ -179,7 +182,7 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
       const cell = cells[r][c]
       const cx = cell.x + cell.width / 2
       const cy = cell.y + cell.height / 2
-      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000" font-family="${escapeXml(fontFamily)}">${escapeXml(cell.letter)}</text>`
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000" font-family="${escapeXml(fontFamily)}"${fontAttrs}>${escapeXml(cell.letter)}</text>`
     }
   }
 
@@ -198,6 +201,16 @@ function buildSvgString(opts?: ExportOptions, tableId?: string, drawWordLines = 
 
   svg += `</g></svg>`
   return svg
+}
+
+function getFontStyleAttrs(opts?: ExportOptions): string {
+  let attrs = ''
+  if (opts?.useLocalFont && opts?.localFontStyle) {
+    const s = opts.localFontStyle.toLowerCase()
+    if (s.includes('italic')) attrs += ' font-style="italic"'
+    if (s.includes('bold')) attrs += ' font-weight="bold"'
+  }
+  return attrs
 }
 
 function getFontStyle(fontFamily: string, opts?: ExportOptions): string {
@@ -267,6 +280,8 @@ export function buildSvgFromSaved(
   const scaleX = targetW / naturalW
   const scaleY = targetH / naturalH
 
+  const fontAttrsSaved = getFontStyleAttrs(opts)
+
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${gen.fontSize}px">`
   svg += getFontStyle(fontFamily, opts)
   svg += `<g transform="scale(${scaleX},${scaleY})">`
@@ -282,7 +297,7 @@ export function buildSvgFromSaved(
       const cell = grid[r][c]
       const cx = c * cellSize + cellSize / 2
       const cy = r * cellSize + cellSize / 2
-      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000" font-family="${escapeXml(fontFamily)}">${escapeXml(cell.letter)}</text>`
+      svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000" font-family="${escapeXml(fontFamily)}"${fontAttrsSaved}>${escapeXml(cell.letter)}</text>`
     }
   }
 

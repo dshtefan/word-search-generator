@@ -19,7 +19,7 @@ const DIRECTION_OFFSETS: Record<Direction, { dx: number; dy: number }> = {
   'down-right': { dx: 1, dy: 1 },
 }
 
-function buildWordPaths(placements: WordPlacement[], words: string[], cellSize: number): WordPath[] {
+function buildWordPaths(placements: WordPlacement[], words: string[], cellW: number, cellH: number): WordPath[] {
   return placements.map((p) => {
     const word = words[p.index] ?? ''
     const len = word.length
@@ -27,10 +27,10 @@ function buildWordPaths(placements: WordPlacement[], words: string[], cellSize: 
     const ex = p.startX + (len - 1) * dx
     const ey = p.startY + (len - 1) * dy
     return {
-      x1: p.startX * cellSize + cellSize / 2,
-      y1: p.startY * cellSize + cellSize / 2,
-      x2: ex * cellSize + cellSize / 2,
-      y2: ey * cellSize + cellSize / 2,
+      x1: p.startX * cellW + cellW / 2,
+      y1: p.startY * cellH + cellH / 2,
+      x2: ex * cellW + cellW / 2,
+      y2: ey * cellH + cellH / 2,
     }
   })
 }
@@ -45,6 +45,10 @@ interface WordSearchGridProps {
   gridStyle: 'full' | 'outer' | 'none'
   showAnswers: boolean
   tableId?: string
+  cellWidthOverride?: number
+  cellHeightOverride?: number
+  fontStyle?: string
+  fontWeight?: string | number
 }
 
 export function WordSearchGrid({
@@ -57,20 +61,25 @@ export function WordSearchGrid({
   gridStyle,
   showAnswers,
   tableId = 'word-search-grid',
+  cellWidthOverride,
+  cellHeightOverride,
+  fontStyle,
+  fontWeight,
 }: WordSearchGridProps) {
-  const cellSize = fontSize + 8
+  const cellW = cellWidthOverride ?? fontSize + 8
+  const cellH = cellHeightOverride ?? fontSize + 8
 
   const wordPaths = useMemo(() => {
     if (!grid || !showAnswers || placements.length === 0) return []
-    return buildWordPaths(placements, words, cellSize)
-  }, [grid, showAnswers, placements, words, cellSize])
+    return buildWordPaths(placements, words, cellW, cellH)
+  }, [grid, showAnswers, placements, words, cellW, cellH])
 
   if (!grid) return null
 
   const rows = grid.length
   const cols = grid[0].length
-  const svgW = cols * cellSize
-  const svgH = rows * cellSize
+  const svgW = cols * cellW
+  const svgH = rows * cellH
 
   const tableClassName =
     gridStyle === 'full'
@@ -96,8 +105,10 @@ export function WordSearchGrid({
                   style={{
                     fontFamily,
                     fontSize: fontSize + 'px',
-                    width: cellSize,
-                    height: cellSize,
+                    width: cellW,
+                    height: cellH,
+                    ...(fontWeight !== undefined ? { fontWeight } : {}),
+                    ...(fontStyle ? { fontStyle } : {}),
                   }}
                 >
                   {cell.letter}
@@ -121,7 +132,7 @@ export function WordSearchGrid({
               x2={wp.x2}
               y2={wp.y2}
               stroke={highlightColor}
-              strokeWidth={cellSize * 0.7}
+              strokeWidth={Math.min(cellW, cellH) * 0.7}
               strokeLinecap="round"
               opacity={0.6}
             />

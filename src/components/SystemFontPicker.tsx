@@ -7,7 +7,7 @@ import { RefreshCwIcon, SearchIcon } from "lucide-react"
 
 interface SystemFontPickerProps {
   value: string
-  onChange: (family: string) => void
+  onChange: (fullName: string, family: string, style: string) => void
 }
 
 export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
@@ -84,15 +84,15 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
               type="button"
               className={cn(
                 "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground",
-                value === f.family && "bg-accent text-accent-foreground"
+                value === f.fullName && "bg-accent text-accent-foreground"
               )}
               onClick={() => {
-                onChange(f.family)
+                onChange(f.fullName, f.family, f.style)
                 setOpen(false)
               }}
             >
               <span style={{ fontFamily: f.family }} className="truncate text-sm">
-                {f.family}
+                {f.fullName}
               </span>
               <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                 {f.style}

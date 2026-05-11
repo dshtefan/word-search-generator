@@ -40,12 +40,20 @@ export interface WordSearchState {
   customFontUrl: string
   useLocalFont: boolean
   localFontFamily: string
+  localFontFullName: string
+  localFontStyle: string
   placements: WordPlacement[]
   grid: Cell[][] | null
   solutionGrid: Cell[][] | null
   isGenerated: boolean
   isGenerating: boolean
   error: string | null
+  useResolution: boolean
+  resolutionW: number
+  resolutionH: number
+  useAspectRatio: boolean
+  aspectRatioW: number
+  aspectRatioH: number
 }
 
 export interface SavedGeneration {
@@ -59,5 +67,17 @@ export interface SavedGeneration {
   fontSize: number
   highlightColor: string
   gridStyle: GridStyle
+  useCustomFont: boolean
+  customFontUrl: string
+  useLocalFont: boolean
+  localFontFamily: string
+  localFontFullName: string
+  localFontStyle: string
+  useResolution: boolean
+  resolutionW: number
+  resolutionH: number
+  useAspectRatio: boolean
+  aspectRatioW: number
+  aspectRatioH: number
   createdAt: number
 }

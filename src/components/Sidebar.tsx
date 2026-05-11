@@ -289,9 +289,11 @@ function Sidebar() {
                 </Label>
                 {state.useLocalFont && (
                   <SystemFontPicker
-                    value={state.localFontFamily}
-                    onChange={(family) => {
+                    value={state.localFontFullName || state.localFontFamily}
+                    onChange={(fullName, family, style) => {
                       dispatch({ type: "SET_LOCAL_FONT_FAMILY", payload: family })
+                      dispatch({ type: "SET_LOCAL_FONT_FULLNAME", payload: fullName })
+                      dispatch({ type: "SET_LOCAL_FONT_STYLE", payload: style })
                       dispatch({ type: "SET_FONT_FAMILY", payload: family })
                     }}
                   />

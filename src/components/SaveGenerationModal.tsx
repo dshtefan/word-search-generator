@@ -24,19 +24,31 @@ export function SaveGenerationModal({ open, onOpenChange }: SaveGenerationModalP
 
   function handleSave() {
     if (!state.isGenerated) return
-    const gen = {
-      id: crypto.randomUUID(),
-      name: name.trim() || defaultName,
-      grid: state.grid,
-      solutionGrid: state.solutionGrid,
-      placements: state.placements,
-      words: state.words,
-      fontFamily: state.fontFamily,
-      fontSize: state.fontSize,
-      highlightColor: state.highlightColor,
-      gridStyle: state.gridStyle,
-      createdAt: Date.now(),
-    }
+      const gen = {
+        id: crypto.randomUUID(),
+        name: name.trim() || defaultName,
+        grid: state.grid,
+        solutionGrid: state.solutionGrid,
+        placements: state.placements,
+        words: state.words,
+        fontFamily: state.fontFamily,
+        fontSize: state.fontSize,
+        highlightColor: state.highlightColor,
+        gridStyle: state.gridStyle,
+        useCustomFont: state.useCustomFont,
+        customFontUrl: state.customFontUrl,
+        useLocalFont: state.useLocalFont,
+        localFontFamily: state.localFontFamily,
+        localFontFullName: state.localFontFullName,
+        localFontStyle: state.localFontStyle,
+        useResolution: state.useResolution,
+        resolutionW: state.resolutionW,
+        resolutionH: state.resolutionH,
+        useAspectRatio: state.useAspectRatio,
+        aspectRatioW: state.aspectRatioW,
+        aspectRatioH: state.aspectRatioH,
+        createdAt: Date.now(),
+      }
     addSaved(gen)
     onOpenChange(false)
     setName(defaultName)
