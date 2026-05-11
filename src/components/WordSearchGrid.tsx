@@ -21,8 +21,7 @@ const DIRECTION_OFFSETS: Record<Direction, { dx: number; dy: number }> = {
 
 function buildWordPaths(placements: WordPlacement[], words: string[], cellW: number, cellH: number): WordPath[] {
   return placements.map((p) => {
-    const word = words[p.index] ?? ''
-    const len = word.length
+    const len = p.wordText.length
     const { dx, dy } = DIRECTION_OFFSETS[p.direction]
     const ex = p.startX + (len - 1) * dx
     const ey = p.startY + (len - 1) * dy

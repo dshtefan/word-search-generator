@@ -52,8 +52,7 @@ const DIR_MAP: Record<string, { dx: number; dy: number }> = {
 
 function buildWordLinesFromPlacements(placements: WordPlacement[], words: string[], cellWidth: number, cellHeight: number): WordLine[] {
   return placements.map((p) => {
-    const word = words[p.index] ?? ''
-    const len = word.length
+    const len = p.wordText.length
     const { dx, dy } = DIR_MAP[p.direction]
     const ex = p.startX + (len - 1) * dx
     const ey = p.startY + (len - 1) * dy

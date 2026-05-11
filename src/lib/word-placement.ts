@@ -244,7 +244,7 @@ export function generateGrid(
       )
 
       directionUsage[placement.direction]++
-      collectedPlacements.push({ index: originalIndex, startX: placement.startX, startY: placement.startY, direction: placement.direction })
+      collectedPlacements.push({ index: originalIndex, startX: placement.startX, startY: placement.startY, direction: placement.direction, wordText: word })
 
       if (backtrack(index + 1)) return true
 

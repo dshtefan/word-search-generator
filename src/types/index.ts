@@ -23,6 +23,7 @@ export interface WordPlacement {
   startX: number
   startY: number
   direction: Direction
+  wordText: string
 }
 
 export interface WordSearchState {
