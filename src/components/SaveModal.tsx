@@ -3,6 +3,7 @@ import { useWordSearch } from "@/context/WordSearchContext"
 import { exportSVG, exportPNG, exportPDF, exportSavedSVG, exportSavedPNG, exportSavedPDF } from "@/lib/export"
 import type { ExportOptions } from "@/lib/export"
 import type { SavedGeneration } from "@/types"
+import JSZip from "jszip"
 import {
   Dialog,
   DialogContent,
@@ -46,20 +47,61 @@ export function SaveModal({ open, onOpenChange, mode = "current", savedList = []
       const isSavedMode = mode === "saved"
 
       if (isSavedMode) {
-        const opts: ExportOptions = {}
-        if (state.useResolution) opts.resolution = { w: state.resolutionW, h: state.resolutionH }
-        if (state.useAspectRatio) opts.aspectRatio = { w: state.aspectRatioW, h: state.aspectRatioH }
-        for (const gen of savedList) {
-          switch (format) {
-            case "svg":
-              exportSavedSVG(gen, gen.name, opts)
-              break
-            case "png":
-              await exportSavedPNG(gen, gen.name, opts)
-              break
-            case "pdf":
-              await exportSavedPDF(gen, gen.name, opts)
-              break
+        const baseOpts: ExportOptions = {}
+        if (state.useResolution) baseOpts.resolution = { w: state.resolutionW, h: state.resolutionH }
+        if (state.useAspectRatio) baseOpts.aspectRatio = { w: state.aspectRatioW, h: state.aspectRatioH }
+
+        if (savedList.length > 1) {
+          const zip = new JSZip()
+          for (const gen of savedList) {
+            const opts = { ...baseOpts }
+            if (gen.useCustomFont) opts.customFontUrl = gen.customFontUrl
+            if (gen.useLocalFont) {
+              opts.useLocalFont = true
+              opts.localFontFamily = gen.localFontFamily
+              opts.localFontStyle = gen.localFontStyle
+            }
+            switch (format) {
+              case "svg":
+                exportSavedSVG(gen, gen.name, opts, zip)
+                break
+              case "png":
+                await exportSavedPNG(gen, gen.name, opts, zip)
+                break
+              case "pdf":
+                await exportSavedPDF(gen, gen.name, opts, zip)
+                break
+            }
+          }
+          const content = await zip.generateAsync({ type: "blob" })
+          const url = URL.createObjectURL(content)
+          const a = document.createElement("a")
+          a.href = url
+          a.download = `saved-generations.${format === "svg" ? "zip" : "zip"}`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        } else {
+          for (const gen of savedList) {
+            const opts = { ...baseOpts }
+            if (gen.useCustomFont) opts.customFontUrl = gen.customFontUrl
+            if (gen.useLocalFont) {
+              opts.useLocalFont = true
+              opts.localFontFamily = gen.localFontFamily
+              opts.localFontStyle = gen.localFontStyle
+            }
+            switch (format) {
+              case "svg":
+                exportSavedSVG(gen, gen.name, opts)
+                break
+              case "png":
+                await exportSavedPNG(gen, gen.name, opts)
+                break
+              case "pdf":
+                await exportSavedPDF(gen, gen.name, opts)
+                break
+            }
           }
         }
         onOpenChange(false)

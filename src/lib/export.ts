@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import JSZip from "jszip"
 import type { Cell, WordPlacement, SavedGeneration } from "@/types"
 
 export interface ExportOptions {
@@ -317,23 +318,38 @@ export function buildSvgFromSaved(
   return svg
 }
 
-export function exportSavedSVG(gen: SavedGeneration, filename: string, opts?: ExportOptions): void {
+export function exportSavedSVG(gen: SavedGeneration, filename: string, opts?: ExportOptions, zip?: JSZip): void {
   const svgAnswers = buildSvgFromSaved(gen, opts, true)
   if (svgAnswers) {
-    downloadBlob(new Blob([svgAnswers], { type: "image/svg+xml" }), `${filename}-answers.svg`)
+    const blob = new Blob([svgAnswers], { type: "image/svg+xml" })
+    if (zip) {
+      zip.file(`${filename}-answers.svg`, blob)
+    } else {
+      downloadBlob(blob, `${filename}-answers.svg`)
+    }
   }
   const svgNoAnswers = buildSvgFromSaved(gen, opts, false)
   if (svgNoAnswers) {
-    downloadBlob(new Blob([svgNoAnswers], { type: "image/svg+xml" }), `${filename}.svg`)
+    const blob = new Blob([svgNoAnswers], { type: "image/svg+xml" })
+    if (zip) {
+      zip.file(`${filename}.svg`, blob)
+    } else {
+      downloadBlob(blob, `${filename}.svg`)
+    }
   }
 }
 
-export async function exportSavedPNG(gen: SavedGeneration, filename: string, opts?: ExportOptions): Promise<void> {
-  await exportSavedPNGSingle(gen, opts, true, `${filename}-answers.png`)
-  await exportSavedPNGSingle(gen, opts, false, `${filename}.png`)
+export async function exportSavedPNG(gen: SavedGeneration, filename: string, opts?: ExportOptions, zip?: JSZip): Promise<void> {
+  if (zip) {
+    await exportSavedPNGSingle(gen, opts, true, `${filename}-answers.png`, zip)
+    await exportSavedPNGSingle(gen, opts, false, `${filename}.png`, zip)
+  } else {
+    await exportSavedPNGSingle(gen, opts, true, `${filename}-answers.png`)
+    await exportSavedPNGSingle(gen, opts, false, `${filename}.png`)
+  }
 }
 
-async function exportSavedPNGSingle(gen: SavedGeneration, opts: ExportOptions | undefined, drawWordLines: boolean, filename: string): Promise<void> {
+async function exportSavedPNGSingle(gen: SavedGeneration, opts: ExportOptions | undefined, drawWordLines: boolean, filename: string, zip?: JSZip): Promise<void> {
   const svg = buildSvgFromSaved(gen, opts, drawWordLines)
   if (!svg) return
 
@@ -354,7 +370,13 @@ async function exportSavedPNGSingle(gen: SavedGeneration, opts: ExportOptions | 
       const ctx = canvas.getContext("2d")!
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
       canvas.toBlob((blob) => {
-        if (blob) downloadBlob(blob, filename)
+        if (blob) {
+          if (zip) {
+            zip.file(filename, blob)
+          } else {
+            downloadBlob(blob, filename)
+          }
+        }
         URL.revokeObjectURL(url)
         resolve()
       }, "image/png")
@@ -367,12 +389,17 @@ async function exportSavedPNGSingle(gen: SavedGeneration, opts: ExportOptions | 
   })
 }
 
-export async function exportSavedPDF(gen: SavedGeneration, filename: string, opts?: ExportOptions): Promise<void> {
-  await exportSavedPDFSingle(gen, opts, true, `${filename}-answers.pdf`)
-  await exportSavedPDFSingle(gen, opts, false, `${filename}.pdf`)
+export async function exportSavedPDF(gen: SavedGeneration, filename: string, opts?: ExportOptions, zip?: JSZip): Promise<void> {
+  if (zip) {
+    await exportSavedPDFSingle(gen, opts, true, `${filename}-answers.pdf`, zip)
+    await exportSavedPDFSingle(gen, opts, false, `${filename}.pdf`, zip)
+  } else {
+    await exportSavedPDFSingle(gen, opts, true, `${filename}-answers.pdf`)
+    await exportSavedPDFSingle(gen, opts, false, `${filename}.pdf`)
+  }
 }
 
-async function exportSavedPDFSingle(gen: SavedGeneration, opts: ExportOptions | undefined, drawWordLines: boolean, filename: string): Promise<void> {
+async function exportSavedPDFSingle(gen: SavedGeneration, opts: ExportOptions | undefined, drawWordLines: boolean, filename: string, zip?: JSZip): Promise<void> {
   const svg = buildSvgFromSaved(gen, opts, drawWordLines)
   if (!svg) return
 
@@ -410,7 +437,12 @@ async function exportSavedPDFSingle(gen: SavedGeneration, opts: ExportOptions | 
       const x = (pageW - drawW) / 2
       const y = (pageH - drawH) / 2
       pdf.addImage(pngData, "PNG", x, y, drawW, drawH)
-      pdf.save(filename)
+
+      if (zip) {
+        zip.file(filename, pdf.output('arraybuffer'))
+      } else {
+        pdf.save(filename)
+      }
 
       URL.revokeObjectURL(url)
       resolve()

@@ -39,10 +39,12 @@ export function SavedPanel() {
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger>
-          <Button variant="ghost" size="sm" className="rounded-full h-7 w-7 p-0 text-sm text-green-600">
-            Generations {savedGenerations.length}
-          </Button>
+        <PopoverTrigger
+          render={
+            <Button variant="ghost" size="sm" className="rounded-full h-7 w-7 p-0 text-sm text-green-600" />
+          }
+        >
+          Generations {savedGenerations.length}
         </PopoverTrigger>
         <PopoverContent className="w-80 max-h-[70vh] flex flex-col p-0" side="top" align="end">
           <div className="flex items-center justify-between px-3 py-2 border-b">
