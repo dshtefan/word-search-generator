@@ -51,7 +51,7 @@ const FONT_OPTIONS = [
   "Verdana",
 ] as const
 
-const FONT_SIZE_OPTIONS = [8, 12, 16, 20, 24, 28, 32, 36, 40, 42] as const
+const FONT_SIZE_OPTIONS = [8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42] as const
 
 const GRID_STYLE_OPTIONS: { value: GridStyle; label: string }[] = [
   { value: "full", label: "Full Grid" },
