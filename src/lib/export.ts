@@ -249,17 +249,13 @@ export function buildSvgFromSaved(
 
   const rows = grid.length
   const cols = grid[0].length
-  const cellSize = gen.fontSize + 8
   const fontFamily = gen.fontFamily
   const highlightColor = gen.highlightColor
   const gridStyle = gen.gridStyle
 
-  const effectiveWordLines = drawWordLines && gen.placements.length > 0
-    ? buildWordLinesFromPlacements(gen.placements, cellSize, cellSize)
-    : []
-
-  const naturalW = cols * cellSize
-  const naturalH = rows * cellSize
+  const naturalCellSize = gen.fontSize + 8
+  const naturalW = cols * naturalCellSize
+  const naturalH = rows * naturalCellSize
 
   let targetW = naturalW
   let targetH = naturalH
@@ -277,41 +273,55 @@ export function buildSvgFromSaved(
     }
   }
 
-  const scaleX = targetW / naturalW
-  const scaleY = targetH / naturalH
+  const hasTarget = opts?.resolution || opts?.aspectRatio
+  const cellW = hasTarget ? targetW / cols : naturalCellSize
+  const cellH = hasTarget ? targetH / rows : naturalCellSize
+  const svgW = cols * cellW
+  const svgH = rows * cellH
+
+  const effectiveWordLines = drawWordLines && gen.placements.length > 0
+    ? buildWordLinesFromPlacements(gen.placements, cellW, cellH)
+    : []
 
   const fontAttrsSaved = getFontStyleAttrs(opts)
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" font-family="${escapeXml(fontFamily)}" font-size="${gen.fontSize}px">`
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" font-family="${escapeXml(fontFamily)}" font-size="${gen.fontSize}px">`
   svg += getFontStyle(fontFamily, opts)
-  svg += `<g transform="scale(${scaleX},${scaleY})">`
+
+  if (hasTarget) {
+    const scaleX = targetW / svgW
+    const scaleY = targetH / svgH
+    svg += `<g transform="scale(${scaleX},${scaleY})">`
+  } else {
+    svg += '<g>'
+  }
 
   if (drawWordLines) {
     for (const wl of effectiveWordLines) {
-      svg += `<line x1="${wl.x1}" y1="${wl.y1}" x2="${wl.x2}" y2="${wl.y2}" stroke="${escapeXml(highlightColor)}" stroke-width="${cellSize * 0.7}" stroke-linecap="round" opacity="0.6" />`
+      svg += `<line x1="${wl.x1}" y1="${wl.y1}" x2="${wl.x2}" y2="${wl.y2}" stroke="${escapeXml(highlightColor)}" stroke-width="${Math.min(cellW, cellH) * 0.7}" stroke-linecap="round" opacity="0.6" />`
     }
   }
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = grid[r][c]
-      const cx = c * cellSize + cellSize / 2
-      const cy = r * cellSize + cellSize / 2
+      const cx = c * cellW + cellW / 2
+      const cy = r * cellH + cellH / 2
       svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" fill="#000" font-family="${escapeXml(fontFamily)}"${fontAttrsSaved}>${escapeXml(cell.letter)}</text>`
     }
   }
 
   if (gridStyle === "full") {
     for (let r = 1; r < rows; r++) {
-      const y = r * cellSize
-      svg += `<line x1="0" y1="${y}" x2="${cols * cellSize}" y2="${y}" stroke="#d1d5db" stroke-width="1" />`
+      const y = r * cellH
+      svg += `<line x1="0" y1="${y}" x2="${cols * cellW}" y2="${y}" stroke="#d1d5db" stroke-width="1" />`
     }
     for (let c = 1; c < cols; c++) {
-      const x = c * cellSize
-      svg += `<line x1="${x}" y1="0" x2="${x}" y2="${rows * cellSize}" stroke="#d1d5db" stroke-width="1" />`
+      const x = c * cellW
+      svg += `<line x1="${x}" y1="0" x2="${x}" y2="${rows * cellH}" stroke="#d1d5db" stroke-width="1" />`
     }
   } else if (gridStyle === "outer") {
-    svg += `<rect x="0" y="0" width="${cols * cellSize}" height="${rows * cellSize}" fill="none" stroke="#9ca3af" stroke-width="2" />`
+    svg += `<rect x="0" y="0" width="${cols * cellW}" height="${rows * cellH}" fill="none" stroke="#9ca3af" stroke-width="2" />`
   }
 
   svg += `</g></svg>`
