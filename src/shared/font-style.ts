@@ -1,3 +1,4 @@
+/** CSS overrides derived from a local font's human-readable style metadata. */
 export interface ParsedFontStyle {
   fontStyle?: 'italic'
   fontWeight?: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900

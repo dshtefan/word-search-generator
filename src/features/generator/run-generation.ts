@@ -9,6 +9,7 @@ import type {
 } from '@/domain/word-search'
 import type { GenerationSettings } from '@/store'
 
+/** A generated puzzle or a presentation-safe failure that retains its original cause. */
 export type GenerationOutcome =
   | { ok: true; value: WordSearchResult }
   | { ok: false; message: string; cause: unknown }

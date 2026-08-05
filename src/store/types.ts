@@ -6,8 +6,10 @@ import type {
 } from '@/domain/word-search'
 import type { SavedGeneration } from '@/features/saved-generations/types'
 
+/** Selects natural sizing or exactly one constrained output sizing strategy. */
 export type OutputMode = 'natural' | 'resolution' | 'aspect-ratio'
 
+/** Inputs whose changes require a new puzzle to be generated. */
 export interface GenerationSettings {
   words: string[]
   language: Language
@@ -17,11 +19,13 @@ export interface GenerationSettings {
   diagonalDirections: Direction[]
 }
 
+/** Describes an optional web-hosted custom font. */
 export interface FontSourceSettings {
   enabled: boolean
   url: string
 }
 
+/** Identifies an optional font selected from the user's local system. */
 export interface LocalFontSettings {
   enabled: boolean
   family: string
@@ -29,6 +33,7 @@ export interface LocalFontSettings {
   style: string
 }
 
+/** Rendering choices that can be changed without regenerating the puzzle. */
 export interface AppearanceSettings {
   highlightColor: string
   fontFamily: string
@@ -38,11 +43,13 @@ export interface AppearanceSettings {
   localFont: LocalFontSettings
 }
 
+/** A two-dimensional width and height value. */
 export interface Dimensions {
   width: number
   height: number
 }
 
+/** Output sizing preferences; `mode` is the single source of mutual exclusion. */
 export interface OutputSettings {
   mode: OutputMode
   resolution: Dimensions
@@ -56,6 +63,7 @@ export interface WordSearchSettings {
   output: OutputSettings
 }
 
+/** Complete application state for generation, rendering, and saved snapshots. */
 export interface WordSearchState {
   settings: WordSearchSettings
   current: WordSearchResult | null
@@ -64,12 +72,14 @@ export interface WordSearchState {
   savedGenerations: SavedGeneration[]
 }
 
+/** Deep appearance patch in which omitted or `undefined` members remain unchanged. */
 export type AppearanceSettingsPatch =
   Omit<Partial<AppearanceSettings>, 'customFont' | 'localFont'> & {
     customFont?: Partial<FontSourceSettings>
     localFont?: Partial<LocalFontSettings>
   }
 
+/** Deep output patch in which omitted or `undefined` dimensions remain unchanged. */
 export type OutputSettingsPatch =
   Omit<Partial<OutputSettings>, 'mode' | 'resolution' | 'aspectRatio'> & {
     resolution?: Partial<Dimensions>

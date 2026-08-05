@@ -10,13 +10,19 @@ import type {
   WordSearchState,
 } from './types'
 
+function definedPatch<T extends object>(patch: Partial<T>): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => value !== undefined),
+  ) as Partial<T>
+}
+
 function patchGeneration(
   settings: GenerationSettings,
   patch: Partial<GenerationSettings>,
 ): GenerationSettings {
   return {
     ...settings,
-    ...patch,
+    ...definedPatch(patch),
     words: patch.words === undefined ? settings.words : [...patch.words],
     cardinalDirections: patch.cardinalDirections === undefined
       ? settings.cardinalDirections
@@ -33,13 +39,13 @@ function patchAppearance(
 ): AppearanceSettings {
   return {
     ...settings,
-    ...patch,
+    ...definedPatch(patch),
     customFont: patch.customFont === undefined
       ? settings.customFont
-      : { ...settings.customFont, ...patch.customFont },
+      : { ...settings.customFont, ...definedPatch(patch.customFont) },
     localFont: patch.localFont === undefined
       ? settings.localFont
-      : { ...settings.localFont, ...patch.localFont },
+      : { ...settings.localFont, ...definedPatch(patch.localFont) },
   }
 }
 
@@ -49,13 +55,13 @@ function patchOutput(
 ): OutputSettings {
   return {
     ...settings,
-    ...patch,
+    ...definedPatch(patch),
     resolution: patch.resolution === undefined
       ? settings.resolution
-      : { ...settings.resolution, ...patch.resolution },
+      : { ...settings.resolution, ...definedPatch(patch.resolution) },
     aspectRatio: patch.aspectRatio === undefined
       ? settings.aspectRatio
-      : { ...settings.aspectRatio, ...patch.aspectRatio },
+      : { ...settings.aspectRatio, ...definedPatch(patch.aspectRatio) },
   }
 }
 

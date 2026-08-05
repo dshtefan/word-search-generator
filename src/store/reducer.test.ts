@@ -101,6 +101,50 @@ describe('wordSearchReducer', () => {
     )
   })
 
+  test('an undefined generation patch member preserves its current value', () => {
+    const initial = createInitialState()
+
+    const nextState = wordSearchReducer(initial, {
+      type: 'generation/changed',
+      payload: { width: undefined },
+    })
+
+    expect(nextState.settings.generation.width).toBe(19)
+  })
+
+  test('an undefined appearance patch member preserves its current value', () => {
+    const initial = createInitialState()
+
+    const nextState = wordSearchReducer(initial, {
+      type: 'appearance/changed',
+      payload: { fontSize: undefined },
+    })
+
+    expect(nextState.settings.appearance.fontSize).toBe(28)
+  })
+
+  test('an undefined nested appearance member preserves its current value', () => {
+    const initial = createInitialState()
+
+    const nextState = wordSearchReducer(initial, {
+      type: 'appearance/changed',
+      payload: { localFont: { enabled: undefined } },
+    })
+
+    expect(nextState.settings.appearance.localFont.enabled).toBe(false)
+  })
+
+  test('an undefined nested output member preserves its current value', () => {
+    const initial = createInitialState()
+
+    const nextState = wordSearchReducer(initial, {
+      type: 'output/changed',
+      payload: { resolution: { width: undefined } },
+    })
+
+    expect(nextState.settings.output.resolution.width).toBe(1024)
+  })
+
   test('generation success publishes the result and clears status atomically', () => {
     const generatingState = wordSearchReducer(createInitialState(), {
       type: 'generation/started',
