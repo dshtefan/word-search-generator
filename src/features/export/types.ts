@@ -47,3 +47,92 @@ export type ExportDocumentSource = Pick<SavedGeneration, 'settings' | 'result'>
 export interface CreateExportDocumentOptions {
   readonly answers: boolean
 }
+
+export type ExportFormat = 'svg' | 'png' | 'pdf'
+
+export interface CurrentExportRequest {
+  readonly source: SavedGeneration
+  readonly format: ExportFormat
+  readonly filename: string
+  readonly includeAnswers: boolean
+  readonly includePuzzle: boolean
+}
+
+export interface SavedExportRequest {
+  readonly snapshots: readonly SavedGeneration[]
+  readonly format: ExportFormat
+}
+
+export type ExportResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly message: string; readonly cause: unknown }
+
+export interface ExportDimensions {
+  readonly width: number
+  readonly height: number
+}
+
+/** Raster output shared by PNG and PDF adapters. */
+export interface RasterizedImage extends ExportDimensions {
+  readonly blob: Blob
+  readonly dataUrl: string
+}
+
+export type RasterizeSvg = (
+  svg: string,
+  dimensions: ExportDimensions,
+) => Promise<RasterizedImage>
+
+export type ExportBinaryAdapter = (
+  svg: string,
+  document: ExportDocument,
+) => Promise<Blob>
+
+export type BlobDownloadPort = (
+  blob: Blob,
+  filename: string,
+) => void | Promise<void>
+
+export interface ZipEntry {
+  readonly filename: string
+  readonly blob: Blob
+}
+
+export type ZipPackagingPort = (entries: readonly ZipEntry[]) => Promise<Blob>
+
+export interface RasterImagePort {
+  onload: (() => void) | null
+  onerror: ((cause?: unknown) => void) | null
+  src: string
+}
+
+export interface RasterCanvasContextPort {
+  drawImage(
+    image: RasterImagePort,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void
+}
+
+export interface RasterCanvasPort extends ExportDimensions {
+  width: number
+  height: number
+  getContext(contextId: '2d'): RasterCanvasContextPort | null
+  toBlob(callback: (blob: Blob | null) => void, type: 'image/png'): void
+  toDataURL(type: 'image/png'): string
+}
+
+/** Minimal browser surface required to rasterize one SVG. */
+export interface RasterizeBrowserPort {
+  createCanvas(): RasterCanvasPort
+  createImage(): RasterImagePort
+  createObjectURL(blob: Blob): string
+  revokeObjectURL(url: string): void
+}
+
+export interface ZipArchivePort {
+  file(filename: string, blob: Blob): void
+  generateBlob(): Promise<Blob>
+}
