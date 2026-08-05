@@ -51,6 +51,9 @@ function getFont(source: ExportDocumentSource): ExportFont {
     ...(appearance.localFont.enabled && appearance.localFont.family.trim()
       ? { localFamily: appearance.localFont.family.trim() }
       : {}),
+    ...(appearance.localFont.enabled && appearance.localFont.fullName.trim()
+      ? { localFullName: appearance.localFont.fullName.trim() }
+      : {}),
   }
 }
 

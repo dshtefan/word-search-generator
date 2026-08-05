@@ -90,6 +90,32 @@ describe('createExportDocument', () => {
     })
   })
 
+  test('scales answer paths from non-square resolution cells', () => {
+    const resolutionSnapshot = structuredClone(snapshot)
+    resolutionSnapshot.settings.output.mode = 'resolution'
+
+    const document = createExportDocument(resolutionSnapshot, { answers: true })
+
+    expect(document.paths).toEqual([
+      {
+        wordIndex: 0,
+        x1: 20,
+        y1: 45,
+        x2: 100,
+        y2: 45,
+        strokeWidth: 21,
+      },
+      {
+        wordIndex: 1,
+        x1: 60,
+        y1: 15,
+        x2: 60,
+        y2: 75,
+        strokeWidth: 21,
+      },
+    ])
+  })
+
   test('expands natural dimensions to the configured aspect ratio', () => {
     const aspectSnapshot = structuredClone(snapshot)
     aspectSnapshot.settings.output.mode = 'aspect-ratio'
@@ -105,6 +131,42 @@ describe('createExportDocument', () => {
       width: 40,
       height: 20,
     })
+  })
+
+  test('expands height for a tall aspect ratio and scales answer paths', () => {
+    const aspectSnapshot = structuredClone(snapshot)
+    aspectSnapshot.settings.output.mode = 'aspect-ratio'
+    aspectSnapshot.settings.output.aspectRatio = { width: 1, height: 2 }
+
+    const document = createExportDocument(aspectSnapshot, { answers: true })
+
+    expect(document.width).toBe(60)
+    expect(document.height).toBe(120)
+    expect(document.cells[4]).toEqual({
+      letter: 'A',
+      x: 20,
+      y: 40,
+      width: 20,
+      height: 40,
+    })
+    expect(document.paths).toEqual([
+      {
+        wordIndex: 0,
+        x1: 10,
+        y1: 60,
+        x2: 50,
+        y2: 60,
+        strokeWidth: 14,
+      },
+      {
+        wordIndex: 1,
+        x1: 30,
+        y1: 20,
+        x2: 30,
+        y2: 100,
+        strokeWidth: 14,
+      },
+    ])
   })
 
   test('uses the solution and keeps crossing placements as separate answer paths', () => {
@@ -163,6 +225,7 @@ describe('createExportDocument', () => {
       style: 'italic',
       weight: 600,
       localFamily: 'Local Family',
+      localFullName: 'Local Family Semi Bold Italic',
     })
     expect(Object.values(document).some((value) => typeof value === 'function'))
       .toBe(false)

@@ -1,6 +1,7 @@
 const INVALID_FILENAME_CHARACTERS = /[\\/:*?"<>|]+/g
 const RESERVED_WINDOWS_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i
 const DEFAULT_FILENAME = 'word-search'
+const MAX_FILENAME_CODE_POINTS = 120
 
 function replaceControlCharacters(name: string): string {
   return [...name].map((character) => {
@@ -20,8 +21,17 @@ function sanitize(name: string): string {
     .replace(/^[. -]+|[. -]+$/g, '')
 }
 
-/** Produces a deterministic cross-platform filename stem without path segments. */
+function truncate(name: string, maximum: number): string {
+  return [...name].slice(0, maximum).join('').replace(/[. -]+$/g, '')
+}
+
+/** Produces a safe filename stem of at most 120 Unicode code points. */
 export function normalizeFilename(name: string, fallback: string): string {
-  const candidate = sanitize(name) || sanitize(fallback) || DEFAULT_FILENAME
-  return RESERVED_WINDOWS_NAME.test(candidate) ? `${candidate}-file` : candidate
+  const candidate = truncate(
+    sanitize(name) || sanitize(fallback) || DEFAULT_FILENAME,
+    MAX_FILENAME_CODE_POINTS,
+  )
+  return RESERVED_WINDOWS_NAME.test(candidate)
+    ? `${truncate(candidate, MAX_FILENAME_CODE_POINTS - 5)}-file`
+    : candidate
 }

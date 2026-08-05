@@ -37,8 +37,9 @@ function renderFontStyles(font: ExportFont): string[] {
     const url = escapeXml(escapeCssString(getHttpFontUrl(font.customUrl)))
     styles.push(`<style>@import url(&quot;${url}&quot;);</style>`)
   }
-  if (font.localFamily !== undefined) {
-    const family = escapeXml(escapeCssString(font.localFamily))
+  const installedName = font.localFullName?.trim() || font.localFamily?.trim()
+  if (installedName) {
+    const family = escapeXml(escapeCssString(installedName))
     styles.push(
       `<style>@font-face { font-family: &quot;${family}&quot;; src: local(&quot;${family}&quot;); }</style>`,
     )
@@ -49,23 +50,24 @@ function renderFontStyles(font: ExportFont): string[] {
 function renderFullBorders(document: ExportDocument): string[] {
   if (document.cells.length === 0) return []
 
-  const left = Math.min(...document.cells.map((cell) => cell.x))
-  const top = Math.min(...document.cells.map((cell) => cell.y))
-  const right = Math.max(...document.cells.map((cell) => cell.x + cell.width))
-  const bottom = Math.max(...document.cells.map((cell) => cell.y + cell.height))
-  const horizontalBoundaries = [...new Set(document.cells.flatMap(
-    (cell) => [cell.y, cell.y + cell.height],
-  ))].sort((a, b) => a - b)
-  const verticalBoundaries = [...new Set(document.cells.flatMap(
-    (cell) => [cell.x, cell.x + cell.width],
-  ))].sort((a, b) => a - b)
+  const inset = 0.5
+  const horizontalBoundaries = [
+    inset,
+    ...new Set(document.cells.map((cell) => cell.y).filter((y) => y > 0)),
+    document.height - inset,
+  ].sort((a, b) => a - b)
+  const verticalBoundaries = [
+    inset,
+    ...new Set(document.cells.map((cell) => cell.x).filter((x) => x > 0)),
+    document.width - inset,
+  ].sort((a, b) => a - b)
 
   return [
     ...horizontalBoundaries.map(
-      (y) => `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="#d1d5db" stroke-width="1" />`,
+      (y) => `<line x1="${inset}" y1="${y}" x2="${document.width - inset}" y2="${y}" stroke="#d1d5db" stroke-width="1" />`,
     ),
     ...verticalBoundaries.map(
-      (x) => `<line x1="${x}" y1="${top}" x2="${x}" y2="${bottom}" stroke="#d1d5db" stroke-width="1" />`,
+      (x) => `<line x1="${x}" y1="${inset}" x2="${x}" y2="${document.height - inset}" stroke="#d1d5db" stroke-width="1" />`,
     ),
   ]
 }
@@ -73,8 +75,9 @@ function renderFullBorders(document: ExportDocument): string[] {
 function renderBorders(document: ExportDocument): string[] {
   if (document.gridStyle === 'full') return renderFullBorders(document)
   if (document.gridStyle === 'outer') {
+    const inset = 1
     return [
-      `<rect x="0" y="0" width="${document.width}" height="${document.height}" fill="none" stroke="#9ca3af" stroke-width="2" />`,
+      `<rect x="${inset}" y="${inset}" width="${document.width - inset * 2}" height="${document.height - inset * 2}" fill="none" stroke="#9ca3af" stroke-width="2" />`,
     ]
   }
   return []

@@ -18,6 +18,7 @@ export interface ExportPath {
   readonly strokeWidth: number
 }
 
+/** Font attributes and optional external or installed face sources. */
 export interface ExportFont {
   readonly family: string
   readonly size: number
@@ -25,6 +26,7 @@ export interface ExportFont {
   readonly weight?: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
   readonly customUrl?: string
   readonly localFamily?: string
+  readonly localFullName?: string
 }
 
 /** Pure rendering data shared by SVG, raster, and PDF export adapters. */
@@ -41,6 +43,7 @@ export interface ExportDocument {
 /** Snapshot fields required to create an export document. */
 export type ExportDocumentSource = Pick<SavedGeneration, 'settings' | 'result'>
 
+/** Selects puzzle letters or the solution with answer paths. */
 export interface CreateExportDocumentOptions {
   readonly answers: boolean
 }

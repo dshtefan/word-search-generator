@@ -23,4 +23,12 @@ describe('normalizeFilename', () => {
   test.each(['CON', 'prn', 'LPT9.txt'])('avoids the reserved Windows name %s', (name) => {
     expect(normalizeFilename(name, 'word-search')).toBe(`${name}-file`)
   })
+
+  test('limits the stem to 120 Unicode code points without splitting a character', () => {
+    const normalized = normalizeFilename(`${'a'.repeat(119)}😀b`, 'word-search')
+
+    expect([...normalized]).toHaveLength(120)
+    expect(normalized.endsWith('😀')).toBe(true)
+    expect(normalized).not.toContain('b')
+  })
 })
