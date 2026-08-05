@@ -1,3 +1,5 @@
+/** @jest-environment node */
+
 import type { WordSearchResult } from '@/domain/word-search'
 import type { SavedGeneration } from '@/features/saved-generations/types'
 import { createInitialState } from './initial-state'
@@ -220,6 +222,71 @@ describe('wordSearchReducer', () => {
       error: null,
     }))
     expect(removedState.savedGenerations).toEqual([])
+  })
+
+  test('applying a saved generation restores independent copies of every field', () => {
+    const baseState = createInitialState()
+    const saved: SavedGeneration = {
+      id: 'saved-complete',
+      name: 'Complete puzzle',
+      createdAt: 456,
+      settings: {
+        generation: {
+          words: ['ALPHA', 'BETA'],
+          language: 'en',
+          width: 8,
+          height: 6,
+          cardinalDirections: ['left', 'right'],
+          diagonalDirections: ['up-left', 'down-right'],
+        },
+        appearance: {
+          highlightColor: '#abcdef',
+          fontFamily: 'Example',
+          fontSize: 41,
+          gridStyle: 'none',
+          customFont: { enabled: true, url: 'https://example.com/font.css' },
+          localFont: {
+            enabled: true,
+            family: 'Local',
+            fullName: 'Local Bold',
+            style: 'Bold',
+          },
+        },
+        output: {
+          mode: 'aspect-ratio',
+          resolution: { width: 1200, height: 800 },
+          aspectRatio: { width: 4, height: 3 },
+        },
+      },
+      result: {
+        puzzle: [[{ letter: 'A' }, { letter: 'B' }]],
+        solution: [[{ letter: 'A' }, { letter: '' }]],
+        placements: [{
+          x: 0,
+          y: 0,
+          wordIndex: 0,
+          direction: 'right',
+          word: 'AB',
+        }],
+      },
+    }
+
+    const nextState = wordSearchReducer(baseState, {
+      type: 'saved/applied',
+      payload: saved,
+    })
+
+    expect(nextState).toEqual(expect.objectContaining({
+      settings: saved.settings,
+      current: saved.result,
+      status: 'ready',
+      error: null,
+    }))
+    expect(nextState.settings).not.toBe(saved.settings)
+    expect(nextState.settings.generation.words).not.toBe(saved.settings.generation.words)
+    expect(nextState.current).not.toBe(saved.result)
+    expect(nextState.current?.puzzle[0]).not.toBe(saved.result.puzzle[0])
+    expect(nextState.current?.placements).not.toBe(saved.result.placements)
   })
 
   test('reset creates fresh defaults without reusing mutable arrays', () => {

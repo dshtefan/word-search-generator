@@ -1,4 +1,8 @@
 import { createInitialState } from './initial-state'
+import {
+  cloneSavedGeneration,
+  cloneSnapshotValue,
+} from '@/features/saved-generations/snapshot'
 import type {
   AppearanceSettings,
   AppearanceSettingsPatch,
@@ -136,7 +140,10 @@ export function wordSearchReducer(
     case 'saved/added':
       return {
         ...state,
-        savedGenerations: [...state.savedGenerations, action.payload],
+        savedGenerations: [
+          ...state.savedGenerations,
+          cloneSavedGeneration(action.payload),
+        ],
       }
     case 'saved/removed':
       return {
@@ -147,7 +154,7 @@ export function wordSearchReducer(
       return {
         ...state,
         settings: copySettings(action.payload.settings),
-        current: action.payload.result,
+        current: cloneSnapshotValue(action.payload.result),
         status: 'ready',
         error: null,
       }
