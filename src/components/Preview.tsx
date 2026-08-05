@@ -2,21 +2,7 @@ import { useState, useLayoutEffect, useRef, useCallback } from 'react'
 import { useWordSearch } from '@/context/WordSearchContext'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { WordSearchGrid } from '@/components/WordSearchGrid'
-
-function parseFontStyle(style: string): { fontStyle?: string; fontWeight?: number } {
-  const s = style.toLowerCase()
-  const result: { fontStyle?: string; fontWeight?: number } = {}
-  if (s.includes('italic')) result.fontStyle = 'italic'
-  if (s.includes('bold')) result.fontWeight = 700
-  else if (s.includes('thin')) result.fontWeight = 100
-  else if (s.includes('extralight') || s.includes('ultra light')) result.fontWeight = 200
-  else if (s.includes('light')) result.fontWeight = 300
-  else if (s.includes('medium')) result.fontWeight = 500
-  else if (s.includes('semibold')) result.fontWeight = 600
-  else if (s.includes('extrabold') || s.includes('ultra bold')) result.fontWeight = 800
-  else if (s.includes('black') || s.includes('heavy')) result.fontWeight = 900
-  return result
-}
+import { parseFontStyle } from '@/shared/font-style'
 
 export function Preview() {
   const { state } = useWordSearch()
