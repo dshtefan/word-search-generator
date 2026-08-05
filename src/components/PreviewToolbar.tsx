@@ -1,78 +1,87 @@
-import { useWordSearch } from "@/context/WordSearchContext"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select'
+import { useWordSearch } from '@/store/WordSearchProvider'
 
-const RESOLUTION_PRESETS: { label: string; w: number; h: number }[] = [
-  { label: "800 × 600", w: 800, h: 600 },
-  { label: "1024 × 768", w: 1024, h: 768 },
-  { label: "1280 × 1024", w: 1280, h: 1024 },
-  { label: "1920 × 1080", w: 1920, h: 1080 },
-  { label: "2560 × 1440", w: 2560, h: 1440 },
+const RESOLUTION_PRESETS = [
+  { label: '800 × 600', width: 800, height: 600 },
+  { label: '1024 × 768', width: 1024, height: 768 },
+  { label: '1280 × 1024', width: 1280, height: 1024 },
+  { label: '1920 × 1080', width: 1920, height: 1080 },
+  { label: '2560 × 1440', width: 2560, height: 1440 },
+]
+const RATIO_PRESETS = [
+  { label: '1:1', width: 1, height: 1 },
+  { label: '4:3', width: 4, height: 3 },
+  { label: '16:9', width: 16, height: 9 },
+  { label: '3:2', width: 3, height: 2 },
+  { label: '2:1', width: 2, height: 1 },
+  { label: '3:4', width: 3, height: 4 },
+  { label: '9:16', width: 9, height: 16 },
+  { label: '2:3', width: 2, height: 3 },
+  { label: '1:2', width: 1, height: 2 },
 ]
 
-const RATIO_PRESETS: { label: string; w: number; h: number }[] = [
-  { label: "1:1", w: 1, h: 1 },
-  { label: "4:3", w: 4, h: 3 },
-  { label: "16:9", w: 16, h: 9 },
-  { label: "3:2", w: 3, h: 2 },
-  { label: "2:1", w: 2, h: 1 },
-  { label: "3:4", w: 3, h: 4 },
-  { label: "9:16", w: 9, h: 16 },
-  { label: "2:3", w: 2, h: 3 },
-  { label: "1:2", w: 1, h: 2 },
-]
-
+/** Edits the mutually exclusive preview/output sizing preferences. */
 export function PreviewToolbar() {
-  const { state, dispatch } = useWordSearch()
+  const { state, updateOutput } = useWordSearch()
+  const output = state.settings.output
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 border-b bg-background/60 text-xs">
-      <Label className="flex items-center gap-1.5 font-normal cursor-pointer text-xs">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b bg-background/60 px-3 py-1.5 text-xs">
+      <Label className="flex cursor-pointer items-center gap-1.5 text-xs font-normal">
         <Checkbox
-          checked={state.useResolution}
-          onCheckedChange={(v) => {
-            if (typeof v === "boolean") {
-              dispatch({ type: "SET_USE_RESOLUTION", payload: v })
-            }
-          }}
+          checked={output.mode === 'resolution'}
+          onCheckedChange={(checked) => updateOutput({
+            mode: checked ? 'resolution' : 'natural',
+          })}
         />
         Custom resolution
       </Label>
-      {state.useResolution && (
+      {output.mode === 'resolution' && (
         <>
           <Input
             type="number"
-            value={state.resolutionW}
-            onChange={(e) => dispatch({ type: "SET_RESOLUTION_W", payload: Number(e.target.value) || 1 })}
+            value={output.resolution.width}
+            onChange={(event) => updateOutput({
+              resolution: {
+                ...output.resolution,
+                width: Number(event.target.value) || 1,
+              },
+            })}
             className="h-7 w-16 px-1.5 text-xs"
             min={1}
           />
           <span className="text-muted-foreground">×</span>
           <Input
             type="number"
-            value={state.resolutionH}
-            onChange={(e) => dispatch({ type: "SET_RESOLUTION_H", payload: Number(e.target.value) || 1 })}
+            value={output.resolution.height}
+            onChange={(event) => updateOutput({
+              resolution: {
+                ...output.resolution,
+                height: Number(event.target.value) || 1,
+              },
+            })}
             className="h-7 w-16 px-1.5 text-xs"
             min={1}
           />
           <span className="text-muted-foreground">px</span>
           <Select
             value=""
-            onValueChange={(v) => {
-              if (!v) return
-              const p = RESOLUTION_PRESETS.find((r) => r.label === v)
-              if (p) {
-                dispatch({ type: "SET_RESOLUTION_W", payload: p.w })
-                dispatch({ type: "SET_RESOLUTION_H", payload: p.h })
+            onValueChange={(value) => {
+              const preset = RESOLUTION_PRESETS.find(({ label }) => label === value)
+              if (preset) {
+                updateOutput({
+                  resolution: { width: preset.width, height: preset.height },
+                })
               }
             }}
           >
@@ -80,50 +89,59 @@ export function PreviewToolbar() {
               <SelectValue placeholder="Preset" />
             </SelectTrigger>
             <SelectContent>
-              {RESOLUTION_PRESETS.map((r) => (
-                <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>
+              {RESOLUTION_PRESETS.map((preset) => (
+                <SelectItem key={preset.label} value={preset.label}>
+                  {preset.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </>
       )}
-
-      <Label className="flex items-center gap-1.5 font-normal cursor-pointer text-xs">
+      <Label className="flex cursor-pointer items-center gap-1.5 text-xs font-normal">
         <Checkbox
-          checked={state.useAspectRatio}
-          onCheckedChange={(v) => {
-            if (typeof v === "boolean") {
-              dispatch({ type: "SET_USE_ASPECT_RATIO", payload: v })
-            }
-          }}
+          checked={output.mode === 'aspect-ratio'}
+          onCheckedChange={(checked) => updateOutput({
+            mode: checked ? 'aspect-ratio' : 'natural',
+          })}
         />
         Custom aspect ratio
       </Label>
-      {state.useAspectRatio && (
+      {output.mode === 'aspect-ratio' && (
         <>
           <Input
             type="number"
-            value={state.aspectRatioW}
-            onChange={(e) => dispatch({ type: "SET_ASPECT_RATIO_W", payload: Number(e.target.value) || 1 })}
+            value={output.aspectRatio.width}
+            onChange={(event) => updateOutput({
+              aspectRatio: {
+                ...output.aspectRatio,
+                width: Number(event.target.value) || 1,
+              },
+            })}
             className="h-7 w-14 px-1.5 text-xs"
             min={1}
           />
           <span className="text-muted-foreground">:</span>
           <Input
             type="number"
-            value={state.aspectRatioH}
-            onChange={(e) => dispatch({ type: "SET_ASPECT_RATIO_H", payload: Number(e.target.value) || 1 })}
+            value={output.aspectRatio.height}
+            onChange={(event) => updateOutput({
+              aspectRatio: {
+                ...output.aspectRatio,
+                height: Number(event.target.value) || 1,
+              },
+            })}
             className="h-7 w-14 px-1.5 text-xs"
             min={1}
           />
           <Select
             value=""
-            onValueChange={(v) => {
-              if (!v) return
-              const p = RATIO_PRESETS.find((r) => r.label === v)
-              if (p) {
-                dispatch({ type: "SET_ASPECT_RATIO_W", payload: p.w })
-                dispatch({ type: "SET_ASPECT_RATIO_H", payload: p.h })
+            onValueChange={(value) => {
+              const preset = RATIO_PRESETS.find(({ label }) => label === value)
+              if (preset) {
+                updateOutput({
+                  aspectRatio: { width: preset.width, height: preset.height },
+                })
               }
             }}
           >
@@ -131,27 +149,25 @@ export function PreviewToolbar() {
               <SelectValue placeholder="Preset" />
             </SelectTrigger>
             <SelectContent>
-              {RATIO_PRESETS.map((r) => (
-                <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>
+              {RATIO_PRESETS.map((preset) => (
+                <SelectItem key={preset.label} value={preset.label}>
+                  {preset.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </>
       )}
-
       <div className="flex-1" />
       <Button
         variant="ghost"
         size="sm"
         className="h-7 text-xs"
-        onClick={() => {
-          dispatch({ type: "SET_USE_RESOLUTION", payload: false })
-          dispatch({ type: "SET_RESOLUTION_W", payload: 1024 })
-          dispatch({ type: "SET_RESOLUTION_H", payload: 768 })
-          dispatch({ type: "SET_USE_ASPECT_RATIO", payload: false })
-          dispatch({ type: "SET_ASPECT_RATIO_W", payload: 16 })
-          dispatch({ type: "SET_ASPECT_RATIO_H", payload: 9 })
-        }}
+        onClick={() => updateOutput({
+          mode: 'natural',
+          resolution: { width: 1024, height: 768 },
+          aspectRatio: { width: 16, height: 9 },
+        })}
       >
         Reset defaults
       </Button>

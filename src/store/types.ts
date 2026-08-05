@@ -81,7 +81,7 @@ export type AppearanceSettingsPatch =
 
 /** Deep output patch in which omitted or `undefined` dimensions remain unchanged. */
 export type OutputSettingsPatch =
-  Omit<Partial<OutputSettings>, 'mode' | 'resolution' | 'aspectRatio'> & {
+  Omit<Partial<OutputSettings>, 'resolution' | 'aspectRatio'> & {
     resolution?: Partial<Dimensions>
     aspectRatio?: Partial<Dimensions>
   }

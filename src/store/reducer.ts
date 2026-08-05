@@ -159,6 +159,9 @@ export function wordSearchReducer(
         error: null,
       }
     case 'reset':
-      return createInitialState()
+      return {
+        ...createInitialState(),
+        savedGenerations: state.savedGenerations.map(cloneSavedGeneration),
+      }
   }
 }
