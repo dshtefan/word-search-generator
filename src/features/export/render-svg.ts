@@ -1,0 +1,110 @@
+import type { ExportDocument, ExportFont } from './types'
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function escapeCssString(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, '\\d ')
+    .replace(/\n/g, '\\a ')
+    .replace(/\f/g, '\\c ')
+}
+
+function getHttpFontUrl(rawUrl: string): string {
+  let url: URL
+  try {
+    url = new URL(rawUrl)
+  } catch {
+    throw new TypeError('Custom font URL must use HTTP or HTTPS')
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new TypeError('Custom font URL must use HTTP or HTTPS')
+  }
+  return url.href
+}
+
+function renderFontStyles(font: ExportFont): string[] {
+  const styles: string[] = []
+  if (font.customUrl !== undefined) {
+    const url = escapeXml(escapeCssString(getHttpFontUrl(font.customUrl)))
+    styles.push(`<style>@import url(&quot;${url}&quot;);</style>`)
+  }
+  if (font.localFamily !== undefined) {
+    const family = escapeXml(escapeCssString(font.localFamily))
+    styles.push(
+      `<style>@font-face { font-family: &quot;${family}&quot;; src: local(&quot;${family}&quot;); }</style>`,
+    )
+  }
+  return styles
+}
+
+function renderFullBorders(document: ExportDocument): string[] {
+  if (document.cells.length === 0) return []
+
+  const left = Math.min(...document.cells.map((cell) => cell.x))
+  const top = Math.min(...document.cells.map((cell) => cell.y))
+  const right = Math.max(...document.cells.map((cell) => cell.x + cell.width))
+  const bottom = Math.max(...document.cells.map((cell) => cell.y + cell.height))
+  const horizontalBoundaries = [...new Set(document.cells.flatMap(
+    (cell) => [cell.y, cell.y + cell.height],
+  ))].sort((a, b) => a - b)
+  const verticalBoundaries = [...new Set(document.cells.flatMap(
+    (cell) => [cell.x, cell.x + cell.width],
+  ))].sort((a, b) => a - b)
+
+  return [
+    ...horizontalBoundaries.map(
+      (y) => `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="#d1d5db" stroke-width="1" />`,
+    ),
+    ...verticalBoundaries.map(
+      (x) => `<line x1="${x}" y1="${top}" x2="${x}" y2="${bottom}" stroke="#d1d5db" stroke-width="1" />`,
+    ),
+  ]
+}
+
+function renderBorders(document: ExportDocument): string[] {
+  if (document.gridStyle === 'full') return renderFullBorders(document)
+  if (document.gridStyle === 'outer') {
+    return [
+      `<rect x="0" y="0" width="${document.width}" height="${document.height}" fill="none" stroke="#9ca3af" stroke-width="2" />`,
+    ]
+  }
+  return []
+}
+
+/** Serializes an export document as SVG without accessing browser rendering state. */
+export function renderSvg(document: ExportDocument): string {
+  const fontAttributes = [
+    `font-family="${escapeXml(document.font.family)}"`,
+    `font-size="${document.font.size}"`,
+    ...(document.font.style === undefined
+      ? []
+      : [`font-style="${document.font.style}"`]),
+    ...(document.font.weight === undefined
+      ? []
+      : [`font-weight="${document.font.weight}"`]),
+  ].join(' ')
+  const lines = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${document.width}" height="${document.height}" viewBox="0 0 ${document.width} ${document.height}" ${fontAttributes}>`,
+    ...renderFontStyles(document.font),
+    `<rect x="0" y="0" width="${document.width}" height="${document.height}" fill="#fff" />`,
+    ...document.paths.map(
+      (path) => `<line x1="${path.x1}" y1="${path.y1}" x2="${path.x2}" y2="${path.y2}" stroke="${escapeXml(document.highlightColor)}" stroke-width="${path.strokeWidth}" stroke-linecap="round" opacity="0.6" />`,
+    ),
+    ...document.cells.map((cell) =>
+      `<text x="${cell.x + cell.width / 2}" y="${cell.y + cell.height / 2}" text-anchor="middle" dominant-baseline="central" fill="#000">${escapeXml(cell.letter)}</text>`,
+    ),
+    ...renderBorders(document),
+    '</svg>',
+  ]
+
+  return lines.join('\n')
+}
