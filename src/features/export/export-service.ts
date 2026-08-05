@@ -49,17 +49,24 @@ function getCurrentVariants(request: CurrentExportRequest): Variant[] {
 }
 
 function getUniqueStems(request: SavedExportRequest): string[] {
-  const used = new Set<string>()
+  const usedFilenames = new Set<string>()
   return request.snapshots.map((snapshot) => {
     const base = normalizeFilename(snapshot.name, snapshot.id)
     let stem = base
     let counter = 2
-    while (used.has(stem.toLocaleLowerCase('en-US'))) {
+    const collides = () => [
+      `${stem}.${request.format}`,
+      `${stem}-answers.${request.format}`,
+    ].some((filename) => usedFilenames.has(filename.toLocaleLowerCase('en-US')))
+    while (collides()) {
       const suffix = `-${counter}`
       stem = `${[...base].slice(0, 120 - suffix.length).join('')}${suffix}`
       counter += 1
     }
-    used.add(stem.toLocaleLowerCase('en-US'))
+    usedFilenames.add(`${stem}.${request.format}`.toLocaleLowerCase('en-US'))
+    usedFilenames.add(
+      `${stem}-answers.${request.format}`.toLocaleLowerCase('en-US'),
+    )
     return stem
   })
 }

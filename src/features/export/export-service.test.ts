@@ -1,6 +1,7 @@
 /** @jest-environment node */
 
 import type { SavedGeneration } from '@/features/saved-generations/types'
+import JSZip from 'jszip'
 import { createBlobDownloader, createZipPackager } from './download'
 import { createExportService } from './export-service'
 import { createPdfExporter } from './export-pdf'
@@ -8,6 +9,7 @@ import { createPngExporter } from './export-png'
 import { createSvgRasterizer } from './rasterize'
 import { renderSvg } from './render-svg'
 import type {
+  BlobDownloadPort,
   ExportBinaryAdapter,
   ExportDocument,
   RasterizeBrowserPort,
@@ -59,6 +61,7 @@ function createServiceHarness(overrides: {
   readonly exportPng?: ExportBinaryAdapter
   readonly exportPdf?: ExportBinaryAdapter
   readonly packageZip?: (entries: readonly { filename: string; blob: Blob }[]) => Promise<Blob>
+  readonly downloadBlob?: BlobDownloadPort
 } = {}) {
   const downloads: { blob: Blob; filename: string }[] = []
   const zipped: { filename: string; blob: Blob }[][] = []
@@ -76,9 +79,9 @@ function createServiceHarness(overrides: {
     exportPng,
     exportPdf,
     packageZip,
-    downloadBlob: async (blob, filename) => {
+    downloadBlob: overrides.downloadBlob ?? (async (blob, filename) => {
       downloads.push({ blob, filename })
-    },
+    }),
   })
 
   return {
@@ -221,6 +224,34 @@ describe('createExportService', () => {
     ])
   })
 
+  test('round-trips all suffix-colliding variants through the default JSZip packager', async () => {
+    const lesson = createSnapshot({ id: 'lesson', name: 'Lesson' })
+    const lessonAnswers = createSnapshot({
+      id: 'lesson-answers',
+      name: 'Lesson-answers',
+    })
+    lessonAnswers.settings.appearance.highlightColor = '#abcdef'
+    const harness = createServiceHarness({ packageZip: createZipPackager() })
+
+    const result = await harness.service.exportSaved({
+      snapshots: [lesson, lessonAnswers],
+      format: 'svg',
+    })
+
+    expect(result).toEqual({ ok: true })
+    const archive = await JSZip.loadAsync(
+      await harness.downloads[0].blob.arrayBuffer(),
+    )
+    expect(Object.keys(archive.files).sort()).toEqual([
+      'Lesson-answers-2-answers.svg',
+      'Lesson-answers-2.svg',
+      'Lesson-answers.svg',
+      'Lesson.svg',
+    ])
+    await expect(archive.file('Lesson-answers-2-answers.svg')?.async('string'))
+      .resolves.toContain('stroke="#abcdef"')
+  })
+
   test('returns a typed failure and emits no partial downloads when an adapter rejects', async () => {
     const cause = new Error('canvas unavailable')
     const harness = createServiceHarness({
@@ -241,6 +272,85 @@ describe('createExportService', () => {
       cause,
     })
     expect(harness.downloads).toEqual([])
+  })
+
+  test('reports a second direct-download rejection after the first file was emitted', async () => {
+    const cause = new Error('second download failed')
+    const emitted: string[] = []
+    let attempt = 0
+    const harness = createServiceHarness({
+      downloadBlob: async (_blob, filename) => {
+        attempt += 1
+        if (attempt === 2) throw cause
+        emitted.push(filename)
+      },
+    })
+
+    const result = await harness.service.exportCurrent({
+      source: createSnapshot(),
+      format: 'svg',
+      filename: 'partial',
+      includeAnswers: true,
+      includePuzzle: true,
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Failed to export current generation',
+      cause,
+    })
+    expect(emitted).toEqual(['partial-answers.svg'])
+    expect(attempt).toBe(2)
+  })
+
+  test('emits no ZIP download when packaging rejects', async () => {
+    const cause = new Error('zip generation failed')
+    const harness = createServiceHarness({
+      packageZip: jest.fn(async () => { throw cause }),
+    })
+
+    const result = await harness.service.exportSaved({
+      snapshots: [
+        createSnapshot({ id: 'one', name: 'One' }),
+        createSnapshot({ id: 'two', name: 'Two' }),
+      ],
+      format: 'svg',
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Failed to export saved generations',
+      cause,
+    })
+    expect(harness.downloads).toEqual([])
+  })
+
+  test('reports a ZIP download rejection without claiming an emitted file', async () => {
+    const cause = new Error('zip download failed')
+    const attempted: string[] = []
+    const emitted: string[] = []
+    const harness = createServiceHarness({
+      downloadBlob: async (_blob, filename) => {
+        attempted.push(filename)
+        throw cause
+      },
+    })
+
+    const result = await harness.service.exportSaved({
+      snapshots: [
+        createSnapshot({ id: 'one', name: 'One' }),
+        createSnapshot({ id: 'two', name: 'Two' }),
+      ],
+      format: 'svg',
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Failed to export saved generations',
+      cause,
+    })
+    expect(attempted).toEqual(['saved-generations.zip'])
+    expect(emitted).toEqual([])
   })
 
   test('returns typed failures for empty variant and snapshot selections', async () => {
@@ -271,8 +381,10 @@ describe('createExportService', () => {
 
 interface RasterHarnessOptions {
   readonly imageFails?: boolean
+  readonly imageNeverSettles?: boolean
   readonly context?: { drawImage: jest.Mock } | null
   readonly outputBlob?: Blob | null
+  readonly blobNeverSettles?: boolean
 }
 
 function createRasterHarness(options: RasterHarnessOptions = {}) {
@@ -281,11 +393,17 @@ function createRasterHarness(options: RasterHarnessOptions = {}) {
   const context = options.context === undefined
     ? { drawImage: jest.fn() }
     : options.context
+  const images: ReturnType<RasterizeBrowserPort['createImage']>[] = []
+  let pendingBlobCallback: ((blob: Blob | null) => void) | undefined
   const canvas = {
     width: 0,
     height: 0,
     getContext: jest.fn(() => context),
     toBlob: jest.fn((callback: (blob: Blob | null) => void) => {
+      if (options.blobNeverSettles) {
+        pendingBlobCallback = callback
+        return
+      }
       callback(options.outputBlob === undefined
         ? new Blob(['png'], { type: 'image/png' })
         : options.outputBlob)
@@ -296,18 +414,21 @@ function createRasterHarness(options: RasterHarnessOptions = {}) {
     createCanvas: () => canvas,
     createImage: () => {
       let source = ''
-      return {
+      const image: ReturnType<RasterizeBrowserPort['createImage']> = {
         onload: null,
         onerror: null,
         get src() { return source },
         set src(value: string) {
           source = value
+          if (options.imageNeverSettles) return
           queueMicrotask(() => {
             if (options.imageFails) this.onerror?.(new Error('image failed'))
             else this.onload?.()
           })
         },
       }
+      images.push(image)
+      return image
     },
     createObjectURL: () => {
       const url = `blob:${urls.length + 1}`
@@ -317,7 +438,15 @@ function createRasterHarness(options: RasterHarnessOptions = {}) {
     revokeObjectURL: (url) => { revoked.push(url) },
   }
 
-  return { browser, canvas, context, urls, revoked }
+  return {
+    browser,
+    canvas,
+    context,
+    images,
+    urls,
+    revoked,
+    invokePendingBlobCallback: (blob: Blob | null) => pendingBlobCallback?.(blob),
+  }
 }
 
 describe('createSvgRasterizer', () => {
@@ -397,6 +526,55 @@ describe('createSvgRasterizer', () => {
       else Object.defineProperty(globalThis, 'document', originalDocument)
       if (originalImage === undefined) delete (globalThis as { Image?: unknown }).Image
       else Object.defineProperty(globalThis, 'Image', originalImage)
+    }
+  })
+
+  test('times out and detaches image listeners when image loading never settles', async () => {
+    jest.useFakeTimers()
+    const harness = createRasterHarness({ imageNeverSettles: true })
+    const rasterize = createSvgRasterizer(harness.browser, {
+      timeoutMilliseconds: 50,
+      schedule: (callback, delay) => setTimeout(callback, delay),
+      cancel: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+    })
+
+    try {
+      const result = rasterize('<svg />', { width: 20, height: 10 })
+      const rejection = expect(result)
+        .rejects.toThrow('Timed out while loading SVG image')
+      await jest.advanceTimersByTimeAsync(50)
+
+      await rejection
+      expect(harness.images[0]).toMatchObject({ onload: null, onerror: null })
+      expect(harness.revoked).toEqual(harness.urls)
+      expect(jest.getTimerCount()).toBe(0)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('times out and ignores a late toBlob callback without leaking resources', async () => {
+    jest.useFakeTimers()
+    const harness = createRasterHarness({ blobNeverSettles: true })
+    const rasterize = createSvgRasterizer(harness.browser, {
+      timeoutMilliseconds: 50,
+      schedule: (callback, delay) => setTimeout(callback, delay),
+      cancel: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+    })
+
+    try {
+      const result = rasterize('<svg />', { width: 20, height: 10 })
+      const rejection = expect(result)
+        .rejects.toThrow('Timed out while creating PNG blob')
+      await jest.advanceTimersByTimeAsync(0)
+      await jest.advanceTimersByTimeAsync(50)
+
+      await rejection
+      harness.invokePendingBlobCallback(new Blob(['late']))
+      expect(harness.revoked).toEqual(harness.urls)
+      expect(jest.getTimerCount()).toBe(0)
+    } finally {
+      jest.useRealTimers()
     }
   })
 })
@@ -537,10 +715,10 @@ describe('createBlobDownloader', () => {
 
 describe('createZipPackager', () => {
   test('adds every named blob and generates one ZIP blob', async () => {
-    const files: { filename: string; blob: Blob }[] = []
+    const files: { filename: string; data: ArrayBuffer }[] = []
     const output = new Blob(['zip'], { type: 'application/zip' })
     const archive: ZipArchivePort = {
-      file: (filename, blob) => { files.push({ filename, blob }) },
+      file: (filename, data) => { files.push({ filename, data }) },
       generateBlob: async () => output,
     }
     const packageZip = createZipPackager({ createArchive: () => archive })
@@ -550,6 +728,8 @@ describe('createZipPackager', () => {
     ]
 
     await expect(packageZip(entries)).resolves.toBe(output)
-    expect(files).toEqual(entries)
+    expect(files.map(({ filename }) => filename)).toEqual(['one.svg', 'two.svg'])
+    await expect(new Blob([files[0].data]).text()).resolves.toBe('one')
+    await expect(new Blob([files[1].data]).text()).resolves.toBe('two')
   })
 })

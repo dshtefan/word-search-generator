@@ -48,8 +48,10 @@ export interface CreateExportDocumentOptions {
   readonly answers: boolean
 }
 
+/** File formats supported by the export service. */
 export type ExportFormat = 'svg' | 'png' | 'pdf'
 
+/** Selects the snapshot, variants, format, and stem for one current export. */
 export interface CurrentExportRequest {
   readonly source: SavedGeneration
   readonly format: ExportFormat
@@ -58,15 +60,18 @@ export interface CurrentExportRequest {
   readonly includePuzzle: boolean
 }
 
+/** Selects complete saved snapshots for direct or batch export. */
 export interface SavedExportRequest {
   readonly snapshots: readonly SavedGeneration[]
   readonly format: ExportFormat
 }
 
+/** Typed success or failure returned by every service operation. */
 export type ExportResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly message: string; readonly cause: unknown }
 
+/** Pixel dimensions supplied to browser-backed renderers. */
 export interface ExportDimensions {
   readonly width: number
   readonly height: number
@@ -78,34 +83,41 @@ export interface RasterizedImage extends ExportDimensions {
   readonly dataUrl: string
 }
 
+/** Converts serialized SVG into PNG data at explicit pixel dimensions. */
 export type RasterizeSvg = (
   svg: string,
   dimensions: ExportDimensions,
 ) => Promise<RasterizedImage>
 
+/** Converts one rendered document into a downloadable binary artifact. */
 export type ExportBinaryAdapter = (
   svg: string,
   document: ExportDocument,
 ) => Promise<Blob>
 
+/** Emits a named blob through a direct-download boundary. */
 export type BlobDownloadPort = (
   blob: Blob,
   filename: string,
 ) => void | Promise<void>
 
+/** One final, uniquely named member of a ZIP archive. */
 export interface ZipEntry {
   readonly filename: string
   readonly blob: Blob
 }
 
+/** Packages named export artifacts into one ZIP blob. */
 export type ZipPackagingPort = (entries: readonly ZipEntry[]) => Promise<Blob>
 
+/** Minimal image event surface needed by SVG rasterization. */
 export interface RasterImagePort {
   onload: (() => void) | null
   onerror: ((cause?: unknown) => void) | null
   src: string
 }
 
+/** Minimal 2D context surface needed to draw a loaded SVG image. */
 export interface RasterCanvasContextPort {
   drawImage(
     image: RasterImagePort,
@@ -116,6 +128,7 @@ export interface RasterCanvasContextPort {
   ): void
 }
 
+/** Minimal canvas surface needed to create PNG blob and data-URL outputs. */
 export interface RasterCanvasPort extends ExportDimensions {
   width: number
   height: number
@@ -132,7 +145,15 @@ export interface RasterizeBrowserPort {
   revokeObjectURL(url: string): void
 }
 
+/** Finite scheduler used to bound callback-only raster operations. */
+export interface RasterizeTimeoutPort {
+  readonly timeoutMilliseconds: number
+  schedule(callback: () => void, delayMilliseconds: number): unknown
+  cancel(handle: unknown): void
+}
+
+/** Minimal archive surface implemented by the JSZip adapter. */
 export interface ZipArchivePort {
-  file(filename: string, blob: Blob): void
+  file(filename: string, data: ArrayBuffer): void
   generateBlob(): Promise<Blob>
 }

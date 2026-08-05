@@ -80,7 +80,7 @@ export function createZipPackager(
   return async (entries) => {
     const archive = dependencies.createArchive()
     for (const entry of entries) {
-      archive.file(entry.filename, entry.blob)
+      archive.file(entry.filename, await entry.blob.arrayBuffer())
     }
     return archive.generateBlob()
   }
