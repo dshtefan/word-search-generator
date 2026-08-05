@@ -1,7 +1,6 @@
 import { getPlacementCells } from './directions'
 import { WordSearchError } from './errors'
 import { getRandomLetter } from './letters'
-import { normalizeWords } from './normalize'
 import type {
   Cell,
   Direction,
@@ -61,8 +60,10 @@ function createEmptyGrid(width: number, height: number): MutableCell[][] {
   )
 }
 
-function getNormalizedWords(input: GenerationInput): NormalizedWord[] {
-  const words = normalizeWords(input.words, input.language)
+function getNormalizedWords(
+  input: GenerationInput,
+  words: readonly string[],
+): NormalizedWord[] {
   let normalizedIndex = 0
 
   return input.words.flatMap((rawWord, originalIndex) => {
@@ -165,7 +166,7 @@ export function generateWordSearch(
   input: GenerationInput,
   options: GenerateWordSearchOptions = {},
 ): WordSearchResult {
-  validateGenerationInput(input)
+  const normalizedWords = validateGenerationInput(input)
 
   const random = options.random ?? Math.random
   const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS
@@ -175,7 +176,7 @@ export function generateWordSearch(
       'maxAttempts must be a finite, non-negative integer',
     )
   }
-  const words = getNormalizedWords(input)
+  const words = getNormalizedWords(input, normalizedWords)
     .sort((left, right) =>
       right.letters.length - left.letters.length
       || left.originalIndex - right.originalIndex,

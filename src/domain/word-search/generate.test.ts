@@ -95,6 +95,24 @@ test('does not mutate the input object or its arrays', () => {
   expect(input.directions).toEqual(originalDirections)
 })
 
+test('normalizes each input word exactly once', () => {
+  const uppercaseSpy = jest.spyOn(String.prototype, 'toLocaleUpperCase')
+
+  try {
+    generateWordSearch({
+      words: ['a'],
+      directions: ['right'],
+      width: 1,
+      height: 1,
+      language: 'en',
+    }, { random: zeroRandom })
+
+    expect(uppercaseSpy).toHaveBeenCalledTimes(1)
+  } finally {
+    uppercaseSpy.mockRestore()
+  }
+})
+
 test.each(Object.entries(DIRECTION_DELTAS) as [Direction, readonly [number, number]][])(
   'places a word in the %s direction',
   (direction, [dx, dy]) => {
@@ -155,6 +173,33 @@ test('restores cells while backtracking from an incompatible early placement', (
     'AB',
     'AC',
     'BC',
+  ])
+})
+
+test('restores an earlier word after backtracking a partial crossing', () => {
+  const result = generateWordSearch({
+    words: ['aa', 'ab', 'ac', 'bc'],
+    directions: ['right', 'down'],
+    width: 2,
+    height: 2,
+    language: 'en',
+  }, { random: zeroRandom, maxAttempts: 10 })
+
+  expect(result.solution.map((row) => row.map(({ letter }) => letter))).toEqual([
+    ['A', 'B'],
+    ['A', 'C'],
+  ])
+  expect(result.placements.map((placement) => placementLetters(result, placement))).toEqual([
+    'AA',
+    'AB',
+    'AC',
+    'BC',
+  ])
+  expect(result.placements.map(({ x, y, direction }) => ({ x, y, direction }))).toEqual([
+    { x: 0, y: 0, direction: 'down' },
+    { x: 0, y: 0, direction: 'right' },
+    { x: 0, y: 1, direction: 'right' },
+    { x: 1, y: 0, direction: 'down' },
   ])
 })
 
@@ -231,6 +276,21 @@ test('throws PLACEMENT_EXHAUSTED when maxAttempts is reached', () => {
   }, { random: zeroRandom, maxAttempts: 1 })).toThrow(
     expect.objectContaining({ code: 'PLACEMENT_EXHAUSTED' }),
   )
+})
+
+test('permits exactly maxAttempts candidate placements', () => {
+  const result = generateWordSearch({
+    words: ['ab', 'cd'],
+    directions: ['right'],
+    width: 2,
+    height: 2,
+    language: 'en',
+  }, { random: zeroRandom, maxAttempts: 2 })
+
+  expect(result.placements.map((placement) => placementLetters(result, placement))).toEqual([
+    'AB',
+    'CD',
+  ])
 })
 
 test.each([NaN, Infinity, -1, 1.5])(

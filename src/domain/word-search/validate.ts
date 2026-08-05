@@ -18,8 +18,8 @@ function fitsDirection(
   return Math.abs(vector.x) * steps < width && Math.abs(vector.y) * steps < height
 }
 
-/** Ensures an input is dimensionally valid and every normalized word can use a selected direction. */
-export function validateGenerationInput(input: GenerationInput): void {
+/** Validates generation rules and returns the normalized words that were checked. */
+export function validateGenerationInput(input: GenerationInput): string[] {
   if (!isValidDimension(input.width) || !isValidDimension(input.height)) {
     throw new WordSearchError(
       'INVALID_DIMENSIONS',
@@ -49,4 +49,6 @@ export function validateGenerationInput(input: GenerationInput): void {
       )
     }
   }
+
+  return words
 }
