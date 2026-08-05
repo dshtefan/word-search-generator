@@ -90,4 +90,15 @@ describe('createPreferencesRepository', () => {
 
     expect(storage.values.has('preferences-key')).toBe(false)
   })
+
+  test('clear does not throw when storage rejects removal', () => {
+    const storage = new MemoryStorage()
+    storage.removeItem = () => {
+      throw new DOMException('Storage blocked', 'SecurityError')
+    }
+
+    const repository = createPreferencesRepository(storage, 'preferences-key')
+
+    expect(() => repository.clear()).not.toThrow()
+  })
 })

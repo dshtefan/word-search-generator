@@ -1,4 +1,4 @@
-import { DIRECTION_VECTORS } from '@/domain/word-search'
+import { getPlacementCells, normalizeWords } from '@/domain/word-search'
 import type {
   Direction,
   Grid,
@@ -177,6 +177,8 @@ function isGrid(value: unknown, width: number, height: number): value is Grid {
 function isPlacement(
   value: unknown,
   settings: WordSearchSettings,
+  puzzle: Grid,
+  solution: Grid,
 ): value is WordPlacement {
   if (!isRecord(value)
     || !hasExactKeys(value, ['x', 'y', 'wordIndex', 'direction', 'word'])
@@ -191,17 +193,31 @@ function isPlacement(
     return false
   }
 
-  const vector = DIRECTION_VECTORS[value.direction as Direction]
-  const wordLength = Array.from(value.word).length
-  const endX = value.x + vector.x * (wordLength - 1)
-  const endY = value.y + vector.y * (wordLength - 1)
+  const direction = value.direction as Direction
+  const enabledDirections = new Set([
+    ...settings.generation.cardinalDirections,
+    ...settings.generation.diagonalDirections,
+  ])
+  const normalizedWord = normalizeWords(
+    [settings.generation.words[value.wordIndex]],
+    settings.generation.language,
+  )[0]
+  if (!enabledDirections.has(direction) || normalizedWord !== value.word) {
+    return false
+  }
 
-  return value.x < settings.generation.width
-    && value.y < settings.generation.height
-    && endX >= 0
-    && endY >= 0
-    && endX < settings.generation.width
-    && endY < settings.generation.height
+  const letters = Array.from(value.word)
+  const cells = getPlacementCells(
+    { x: value.x as number, y: value.y as number },
+    direction,
+    letters.length,
+  )
+  return cells.every(({ x, y }, index) => x >= 0
+    && y >= 0
+    && x < settings.generation.width
+    && y < settings.generation.height
+    && puzzle[y][x].letter === letters[index]
+    && solution[y][x].letter === letters[index])
 }
 
 function isWordSearchResult(
@@ -213,10 +229,16 @@ function isWordSearchResult(
   }
 
   const { width, height } = settings.generation
-  return isGrid(value.puzzle, width, height)
-    && isGrid(value.solution, width, height)
-    && Array.isArray(value.placements)
-    && value.placements.every((placement) => isPlacement(placement, settings))
+  const { puzzle, solution, placements } = value
+  if (!isGrid(puzzle, width, height)
+    || !isGrid(solution, width, height)
+    || !Array.isArray(placements)
+  ) {
+    return false
+  }
+
+  return placements.every((placement) =>
+    isPlacement(placement, settings, puzzle, solution))
 }
 
 function isSavedGeneration(value: unknown): value is SavedGeneration {
@@ -272,7 +294,11 @@ export function createSavedGenerationsRepository(
       }
     },
     clear() {
-      storage.removeItem(key)
+      try {
+        storage.removeItem(key)
+      } catch {
+        // Storage may be unavailable or blocked; clearing remains best-effort.
+      }
     },
   }
 }

@@ -58,7 +58,11 @@ export function createPreferencesRepository(
       }
     },
     clear() {
-      storage.removeItem(key)
+      try {
+        storage.removeItem(key)
+      } catch {
+        // Storage may be unavailable or blocked; clearing remains best-effort.
+      }
     },
   }
 }

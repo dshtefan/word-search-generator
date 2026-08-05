@@ -150,6 +150,33 @@ describe('createSavedGenerationsRepository', () => {
       const result = item.result as { placements: Array<Record<string, unknown>> }
       result.placements[0].x = 2
     }],
+    ['a placement direction disabled by settings', (item: Record<string, unknown>) => {
+      const settings = item.settings as { generation: { words: string[] } }
+      settings.generation.words[0] = 'TAC'
+      const result = item.result as { placements: Array<Record<string, unknown>> }
+      result.placements[0] = {
+        ...result.placements[0],
+        x: 2,
+        direction: 'left',
+        word: 'TAC',
+      }
+    }],
+    ['a placement word inconsistent with its settings index', (item: Record<string, unknown>) => {
+      const settings = item.settings as { generation: { words: string[] } }
+      settings.generation.words[0] = ' dog '
+    }],
+    ['a placement word inconsistent with the puzzle path', (item: Record<string, unknown>) => {
+      const result = item.result as {
+        puzzle: Array<Array<Record<string, unknown>>>
+      }
+      result.puzzle[0][1].letter = 'X'
+    }],
+    ['a placement word inconsistent with the solution path', (item: Record<string, unknown>) => {
+      const result = item.result as {
+        solution: Array<Array<Record<string, unknown>>>
+      }
+      result.solution[0][1].letter = 'X'
+    }],
   ])('rejects the entire payload containing %s', (_label, mutate) => {
     const malformed = structuredClone(saved) as unknown as Record<string, unknown>
     mutate(malformed)
@@ -186,5 +213,16 @@ describe('createSavedGenerationsRepository', () => {
     createSavedGenerationsRepository(storage, 'saved-key').clear()
 
     expect(storage.values.has('saved-key')).toBe(false)
+  })
+
+  test('clear does not throw when storage rejects removal', () => {
+    const storage = new MemoryStorage()
+    storage.removeItem = () => {
+      throw new DOMException('Storage blocked', 'SecurityError')
+    }
+
+    const repository = createSavedGenerationsRepository(storage, 'saved-key')
+
+    expect(() => repository.clear()).not.toThrow()
   })
 })
