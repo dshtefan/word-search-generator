@@ -92,7 +92,7 @@ describe('renderSvg', () => {
     )
   })
 
-  test('uses the precise local font name and escapes CSS/XML boundaries', () => {
+  test('aliases the precise local face under the rendering family', () => {
     const svg = renderSvg({
       ...fullDocument,
       font: {
@@ -105,7 +105,7 @@ describe('renderSvg', () => {
     })
 
     expect(svg).toContain(
-      '<style>@font-face { font-family: &quot;Precise \\&quot;); } &lt;/style&gt;&lt;script&gt;&quot;; src: local(&quot;Precise \\&quot;); } &lt;/style&gt;&lt;script&gt;&quot;); }</style>',
+      '<style>@font-face { font-family: &quot;Local &lt;/text&gt; &amp; \\&quot;Family\\&quot;&quot;; src: local(&quot;Precise \\&quot;); } &lt;/style&gt;&lt;script&gt;&quot;); }</style>',
     )
     expect(svg).toContain('font-style="italic" font-weight="700"')
     expect(svg).not.toContain('<script>')

@@ -39,9 +39,10 @@ function renderFontStyles(font: ExportFont): string[] {
   }
   const installedName = font.localFullName?.trim() || font.localFamily?.trim()
   if (installedName) {
-    const family = escapeXml(escapeCssString(installedName))
+    const family = escapeXml(escapeCssString(font.family))
+    const source = escapeXml(escapeCssString(installedName))
     styles.push(
-      `<style>@font-face { font-family: &quot;${family}&quot;; src: local(&quot;${family}&quot;); }</style>`,
+      `<style>@font-face { font-family: &quot;${family}&quot;; src: local(&quot;${source}&quot;); }</style>`,
     )
   }
   return styles
