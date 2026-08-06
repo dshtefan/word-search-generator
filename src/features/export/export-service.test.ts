@@ -185,7 +185,7 @@ describe('createExportService', () => {
 
       expect(result).toMatchObject({
         ok: false,
-        message: 'Failed to export current generation',
+        code: 'CURRENT_EXPORT_FAILED',
         cause: expect.objectContaining({
           message: 'Export dimensions must be positive finite numbers',
         }),
@@ -299,7 +299,7 @@ describe('createExportService', () => {
 
     expect(result).toEqual({
       ok: false,
-      message: 'Failed to export current generation',
+      code: 'CURRENT_EXPORT_FAILED',
       cause,
     })
     expect(harness.downloads).toEqual([])
@@ -327,7 +327,7 @@ describe('createExportService', () => {
 
     expect(result).toEqual({
       ok: false,
-      message: 'Failed to export current generation',
+      code: 'CURRENT_EXPORT_FAILED',
       cause,
     })
     expect(emitted).toEqual(['partial-answers.svg'])
@@ -350,7 +350,7 @@ describe('createExportService', () => {
 
     expect(result).toEqual({
       ok: false,
-      message: 'Failed to export saved generations',
+      code: 'SAVED_EXPORT_FAILED',
       cause,
     })
     expect(harness.downloads).toEqual([])
@@ -377,7 +377,7 @@ describe('createExportService', () => {
 
     expect(result).toEqual({
       ok: false,
-      message: 'Failed to export saved generations',
+      code: 'SAVED_EXPORT_FAILED',
       cause,
     })
     expect(attempted).toEqual(['saved-generations.zip'])
@@ -398,12 +398,12 @@ describe('createExportService', () => {
 
     expect(current).toMatchObject({
       ok: false,
-      message: 'Select at least one export variant',
+      code: 'NO_VARIANTS',
       cause: expect.any(Error),
     })
     expect(saved).toMatchObject({
       ok: false,
-      message: 'Select at least one saved generation',
+      code: 'NO_SAVED',
       cause: expect.any(Error),
     })
     expect(harness.downloads).toEqual([])

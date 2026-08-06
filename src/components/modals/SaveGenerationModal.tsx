@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useWordSearch } from '@/store'
+import { useI18n } from '@/i18n'
 
 interface SaveGenerationModalProps {
   open: boolean
@@ -22,8 +23,11 @@ export function SaveGenerationModal({
   open,
   onOpenChange,
 }: SaveGenerationModalProps) {
+  const { t } = useI18n()
   const { state, saveGeneration } = useWordSearch()
-  const defaultName = `Generation ${state.savedGenerations.length + 1}`
+  const defaultName = t('generationDefaultName', {
+    count: state.savedGenerations.length + 1,
+  })
   const [name, setName] = useState(defaultName)
 
   useEffect(() => {
@@ -41,13 +45,13 @@ export function SaveGenerationModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Save Generation</DialogTitle>
+          <DialogTitle>{t('saveGenerationTitle')}</DialogTitle>
           <DialogDescription>
-            Save the current word search with a custom name.
+            {t('saveGenerationDescription')}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="gen-name">Name</Label>
+          <Label htmlFor="gen-name">{t('name')}</Label>
           <Input
             id="gen-name"
             type="text"
@@ -59,10 +63,10 @@ export function SaveGenerationModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button onClick={handleSave} disabled={state.current === null}>
-            Save
+            {t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -66,10 +66,17 @@ export interface SavedExportRequest {
   readonly format: ExportFormat
 }
 
+/** Stable failures translated only at the UI boundary. */
+export type ExportErrorCode =
+  | 'NO_VARIANTS'
+  | 'CURRENT_EXPORT_FAILED'
+  | 'NO_SAVED'
+  | 'SAVED_EXPORT_FAILED'
+
 /** Typed success or failure returned by every service operation. */
 export type ExportResult =
   | { readonly ok: true }
-  | { readonly ok: false; readonly message: string; readonly cause: unknown }
+  | { readonly ok: false; readonly code: ExportErrorCode; readonly cause: unknown }
 
 /** Pixel dimensions supplied to browser-backed renderers. */
 export interface ExportDimensions {

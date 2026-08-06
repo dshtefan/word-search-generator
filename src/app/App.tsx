@@ -3,11 +3,13 @@ import { Preview } from '@/components/preview/Preview'
 import { SavedPanel } from '@/components/saved/SavedPanel'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { WordSearchProvider } from '@/store'
+import { I18nProvider } from '@/i18n'
 
 /** Composes the word-search editor using the intent-level React facade. */
 export function App() {
   return (
-    <WordSearchProvider>
+    <I18nProvider>
+      <WordSearchProvider>
       <div className="flex h-screen">
         <Sidebar />
         <div className="flex flex-1 flex-col">
@@ -23,7 +25,8 @@ export function App() {
       <div className="fixed bottom-2 right-12">
         <SavedPanel />
       </div>
-    </WordSearchProvider>
+      </WordSearchProvider>
+    </I18nProvider>
   )
 }
 

@@ -2,6 +2,7 @@ import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
 import type { StorageAdapter } from '@/features/saved-generations/repository'
+import { I18nProvider } from '@/i18n'
 import {
   WordSearchProvider,
   createWordSearchRuntime,
@@ -50,9 +51,11 @@ export function renderWordSearch(
     user: userEvent.setup(),
     runtime,
     ...render(
-      <WordSearchProvider runtime={runtime}>
-        {ui}
-      </WordSearchProvider>,
+      <I18nProvider>
+        <WordSearchProvider runtime={runtime}>
+          {ui}
+        </WordSearchProvider>
+      </I18nProvider>,
     ),
   }
 }

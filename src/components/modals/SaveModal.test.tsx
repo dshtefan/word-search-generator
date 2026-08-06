@@ -117,7 +117,7 @@ describe('SaveModal', () => {
 
     expect(dialog).toBeVisible()
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Export service unavailable',
+      'Unable to export word search',
     )
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled()
   })
@@ -129,7 +129,7 @@ describe('SaveModal', () => {
       exportSaved: jest.fn()
         .mockResolvedValueOnce({
           ok: false as const,
-          message: 'Export storage is unavailable',
+          code: 'SAVED_EXPORT_FAILED' as const,
           cause: new Error('blocked'),
         })
         .mockResolvedValueOnce({ ok: true as const }),
@@ -151,7 +151,7 @@ describe('SaveModal', () => {
     await user.click(exportButton)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Export storage is unavailable',
+      'Failed to export saved generations',
     )
     expect(exportButton).toBeEnabled()
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
@@ -187,7 +187,7 @@ describe('SaveModal', () => {
     expect(screen.getByRole('button', { name: 'Export 1 generation' })).toBeEnabled()
     await act(async () => first.resolve({
       ok: false,
-      message: 'Stale export failed',
+      code: 'SAVED_EXPORT_FAILED',
       cause: new Error('stale'),
     }))
     expect(screen.queryByText('Stale export failed')).not.toBeInTheDocument()
@@ -222,10 +222,12 @@ describe('SaveModal', () => {
 
     await act(async () => second.resolve({
       ok: false,
-      message: 'Newest export failed',
+      code: 'SAVED_EXPORT_FAILED',
       cause: new Error('newest'),
     }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Newest export failed')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Failed to export saved generations',
+    )
   })
 
   test('exports the complete current snapshot with fallback naming and both variants', async () => {

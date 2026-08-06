@@ -11,6 +11,8 @@
   raster/PDF adapters, downloading, and ZIP packaging.
 - `src/store`: state types, reducer, persistence runtime, provider, and
   `useWordSearch` intent facade.
+- `src/i18n`: typed `en`, `ru`, and `de` interface messages, locale context,
+  and locale persistence separate from puzzle settings.
 - `src/components`: UI sections and primitives; `src/app/App.tsx` composes the
   application. `src/shared` holds cross-cutting helpers, `src/lib/utils.ts`
   holds general UI utilities, `src/main.tsx` mounts `<App />` in `StrictMode`,
@@ -32,6 +34,9 @@
   any other live DOM output.
 - Use the `@/` alias for `src` imports and keep public/non-obvious contracts
   documented with concise TSDoc. Do not narrate straightforward internals.
+- Route every user-visible label, description, accessibility name, and
+  presentation-safe error through `useI18n()`. Pass stable error codes from
+  features to components instead of localized strings.
 
 ## Commands
 

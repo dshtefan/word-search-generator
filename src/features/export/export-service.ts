@@ -10,6 +10,7 @@ import type {
   ExportBinaryAdapter,
   ExportDocument,
   ExportFormat,
+  ExportErrorCode,
   ExportResult,
   SavedExportRequest,
   ZipEntry,
@@ -34,8 +35,8 @@ interface Variant {
   readonly suffix: string
 }
 
-function createFailure(message: string, cause: unknown): ExportResult {
-  return { ok: false, message, cause }
+function createFailure(code: ExportErrorCode, cause: unknown): ExportResult {
+  return { ok: false, code, cause }
 }
 
 function getCurrentVariants(request: CurrentExportRequest): Variant[] {
@@ -111,7 +112,7 @@ export function createExportService(
       const variants = getCurrentVariants(request)
       if (variants.length === 0) {
         return createFailure(
-          'Select at least one export variant',
+          'NO_VARIANTS',
           new Error('No export variants selected'),
         )
       }
@@ -127,14 +128,14 @@ export function createExportService(
         }
         return { ok: true }
       } catch (cause) {
-        return createFailure('Failed to export current generation', cause)
+        return createFailure('CURRENT_EXPORT_FAILED', cause)
       }
     },
 
     async exportSaved(request) {
       if (request.snapshots.length === 0) {
         return createFailure(
-          'Select at least one saved generation',
+          'NO_SAVED',
           new Error('No saved generations selected'),
         )
       }
@@ -167,7 +168,7 @@ export function createExportService(
         }
         return { ok: true }
       } catch (cause) {
-        return createFailure('Failed to export saved generations', cause)
+        return createFailure('SAVED_EXPORT_FAILED', cause)
       }
     },
   }

@@ -12,6 +12,7 @@ The table lists internal project imports. Package imports such as `react` and
 | `src/features/saved-generations` | Immutable saved snapshots and strict browser-storage repository. | Domain and store types. |
 | `src/features/export` | Export-document construction, pure SVG rendering, raster/PDF adapters, downloading, and ZIP packaging. | Domain, saved-generation types, store types, and shared font parsing. |
 | `src/store` | Application state, reducer, persistence runtime, React provider, and intent-level context facade. | Domain and features. |
+| `src/i18n` | Typed English, Russian, and German UI messages plus interface-locale context and persistence. | React only in the provider/context module; message formatting is framework-independent. |
 | `src/components` | Presentational/editor UI and UI primitives. | The store facade plus inward domain/feature types and helpers, shared helpers, `src/lib`, and component-local modules; none of those layers may depend on components. |
 | `src/shared` | Small cross-cutting helpers that do not belong to a feature. | Domain-independent utilities only. |
 | `src/lib` | General UI utility helpers such as `cn`. | Third-party utility packages only. |
@@ -59,6 +60,21 @@ Reducer actions are complete user intents: `generation/changed`,
 `generation/started`, `generation/succeeded`, `generation/failed`,
 `saved/added`, `saved/removed`, `saved/applied`, and `reset`. Preserve their
 immutable updates and invalidation behavior when adding settings.
+
+## Interface localization
+
+`I18nProvider` wraps the application independently of `WordSearchProvider`.
+Components obtain the active locale and typed `t()` function through
+`useI18n()`. English defines the canonical message-key set; Russian and German
+dictionaries must implement every key. User-facing generation and export
+failures cross feature boundaries as stable error codes and are translated only
+by components.
+
+The selected interface locale uses the `word-search:interface-locale` storage
+key and also updates the document `lang` attribute and title. It is deliberately
+separate from `settings.generation.language`: changing the interface does not
+change the puzzle alphabet, and applying a saved puzzle does not change the UI
+language.
 
 ## Persistence
 

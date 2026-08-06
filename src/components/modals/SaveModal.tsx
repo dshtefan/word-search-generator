@@ -19,8 +19,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { ExportFormat } from '@/features/export/types'
+import type { ExportErrorCode } from '@/features/export/types'
 import type { SavedGeneration } from '@/features/saved-generations/types'
 import { useWordSearch } from '@/store'
+import { useI18n } from '@/i18n'
+import type { MessageKey } from '@/i18n'
+
+const EXPORT_ERROR_KEYS: Readonly<Record<ExportErrorCode, MessageKey>> = {
+  NO_VARIANTS: 'exportNoVariants',
+  CURRENT_EXPORT_FAILED: 'exportCurrentFailed',
+  NO_SAVED: 'exportNoSaved',
+  SAVED_EXPORT_FAILED: 'exportSavedFailed',
+}
 
 interface SaveModalProps {
   open: boolean
@@ -36,6 +46,7 @@ export function SaveModal({
   mode = 'current',
   savedList = [],
 }: SaveModalProps) {
+  const { t } = useI18n()
   const { state, exportService } = useWordSearch()
   const [format, setFormat] = useState<ExportFormat>('svg')
   const [isExporting, setIsExporting] = useState(false)
@@ -82,17 +93,13 @@ export function SaveModal({
           })
 
       if (attempt !== activeAttempt.current || result === null) return
-      if ('message' in result) {
-        setError(result.message)
+      if ('code' in result) {
+        setError(t(EXPORT_ERROR_KEYS[result.code]))
         return
       }
       handleOpenChange(false)
-    } catch (cause: unknown) {
-      if (attempt === activeAttempt.current) {
-        setError(cause instanceof Error
-          ? cause.message
-          : 'Unable to export word search')
-      }
+    } catch {
+      if (attempt === activeAttempt.current) setError(t('exportUnexpected'))
     } finally {
       if (attempt === activeAttempt.current) setIsExporting(false)
     }
@@ -105,16 +112,16 @@ export function SaveModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Save Word Search</DialogTitle>
+          <DialogTitle>{t('saveWordSearch')}</DialogTitle>
           <DialogDescription>
             {mode === 'saved'
-              ? `Export ${savedList.length} saved generation${savedList.length !== 1 ? 's' : ''}.`
-              : 'Choose a format and download the current word search grid.'}
+              ? t('exportSavedDescription', { count: savedList.length })
+              : t('exportCurrentDescription')}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="format-select">Format</Label>
+            <Label htmlFor="format-select">{t('format')}</Label>
             <Select
               value={format}
               onValueChange={(value) => setFormat(value as ExportFormat)}
@@ -131,7 +138,7 @@ export function SaveModal({
           </div>
           {mode === 'current' && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="filename-input">File name</Label>
+              <Label htmlFor="filename-input">{t('fileName')}</Label>
               <Input
                 id="filename-input"
                 type="text"
@@ -149,7 +156,7 @@ export function SaveModal({
                   checked={downloadBoth}
                   onCheckedChange={(checked) => setDownloadBoth(!!checked)}
                 />
-                Download both (with &amp; without answers)
+                {t('downloadBoth')}
               </Label>
             </div>
           )}
@@ -161,17 +168,17 @@ export function SaveModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             onClick={() => void handleSave()}
             disabled={currentUnavailable || savedUnavailable || isExporting}
           >
             {isExporting
-              ? 'Saving...'
+              ? t('saving')
               : mode === 'saved'
-                ? `Export ${savedList.length} generation${savedList.length !== 1 ? 's' : ''}`
-                : 'Save'}
+                ? t('exportGenerations', { count: savedList.length })
+                : t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -3,6 +3,7 @@ import type {
   GridStyle,
   Language,
   WordSearchResult,
+  WordSearchErrorCode,
 } from '@/domain/word-search'
 import type { SavedGeneration } from '@/features/saved-generations/types'
 
@@ -72,7 +73,7 @@ export interface WordSearchState {
   settings: WordSearchSettings
   current: WordSearchResult | null
   status: 'idle' | 'generating' | 'ready' | 'error'
-  error: string | null
+  error: WordSearchErrorCode | 'UNKNOWN' | null
   savedGenerations: SavedGeneration[]
 }
 
@@ -98,7 +99,7 @@ export type WordSearchAction =
   | { type: 'output/modeChanged'; payload: OutputMode }
   | { type: 'generation/started' }
   | { type: 'generation/succeeded'; payload: WordSearchResult }
-  | { type: 'generation/failed'; payload: string }
+  | { type: 'generation/failed'; payload: WordSearchErrorCode | 'UNKNOWN' }
   | { type: 'saved/added'; payload: SavedGeneration }
   | { type: 'saved/removed'; payload: string }
   | { type: 'saved/applied'; payload: SavedGeneration }

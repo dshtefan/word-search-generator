@@ -9,9 +9,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { useWordSearch } from '@/store'
+import { useI18n } from '@/i18n'
 
 /** Lists saved snapshots and offers apply, remove, selection, and export intents. */
 export function SavedPanel() {
+  const { t } = useI18n()
   const { state, applySaved, removeSaved } = useWordSearch()
   const [open, setOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -59,7 +61,7 @@ export function SavedPanel() {
             />
           }
         >
-          Generations {savedGenerations.length}
+          {t('generationsCount', { count: savedGenerations.length })}
         </PopoverTrigger>
         <PopoverContent
           className="flex max-h-[70vh] w-80 flex-col p-0"
@@ -73,7 +75,7 @@ export function SavedPanel() {
                 indeterminate={someSelected}
                 onCheckedChange={toggleAll}
               />
-              <span className="text-sm font-medium">Saved Generations</span>
+              <span className="text-sm font-medium">{t('savedGenerations')}</span>
             </div>
             <Button
               variant="ghost"
@@ -86,7 +88,7 @@ export function SavedPanel() {
           </div>
           {savedGenerations.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              No saved generations yet
+              {t('noSavedGenerations')}
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
@@ -98,24 +100,27 @@ export function SavedPanel() {
                     className="flex items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50"
                   >
                     <Checkbox
-                      aria-label={`Select ${saved.name}`}
+                      aria-label={t('selectSaved', { name: saved.name })}
                       checked={selectedIds.has(saved.id)}
                       onCheckedChange={() => toggleId(saved.id)}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{saved.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {saved.settings.generation.words.length} words,{' '}
-                        {dimensions?.columns ?? 0}x{dimensions?.rows ?? 0},{' '}
-                        {saved.settings.appearance.fontFamily}
+                        {t('savedMetadata', {
+                          count: saved.settings.generation.words.length,
+                          width: dimensions?.columns ?? 0,
+                          height: dimensions?.rows ?? 0,
+                          font: saved.settings.appearance.fontFamily,
+                        })}
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 px-1.5 text-muted-foreground hover:text-foreground"
-                      title="Apply"
-                      aria-label={`Apply ${saved.name}`}
+                      title={t('apply')}
+                      aria-label={t('applySaved', { name: saved.name })}
                       onClick={() => {
                         applySaved(saved.id)
                         setOpen(false)
@@ -127,8 +132,8 @@ export function SavedPanel() {
                       variant="ghost"
                       size="sm"
                       className="h-7 px-1.5 text-muted-foreground hover:text-destructive"
-                      title="Delete"
-                      aria-label={`Delete ${saved.name}`}
+                      title={t('delete')}
+                      aria-label={t('deleteSaved', { name: saved.name })}
                       onClick={() => deleteSaved(saved.id)}
                     >
                       &times;
@@ -149,7 +154,7 @@ export function SavedPanel() {
                 setOpen(false)
               }}
             >
-              Export selected ({selected.length})
+              {t('exportSelected', { count: selected.length })}
             </Button>
           </div>
         </PopoverContent>

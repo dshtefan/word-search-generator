@@ -205,13 +205,13 @@ describe('wordSearchReducer', () => {
 
     const nextState = wordSearchReducer(readyState, {
       type: 'generation/failed',
-      payload: 'Generation failed',
+      payload: 'UNKNOWN',
     })
 
     expect(nextState).toEqual(expect.objectContaining({
       current: null,
       status: 'error',
-      error: 'Generation failed',
+      error: 'UNKNOWN',
     }))
   })
 

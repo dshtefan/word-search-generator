@@ -4,9 +4,11 @@ import { parseFontStyle } from '@/shared/font-style'
 import { useWordSearch } from '@/store'
 import { WordSearchGrid } from './WordSearchGrid'
 import { getGridDimensions } from './grid-dimensions'
+import { useI18n } from '@/i18n'
 
 /** Displays puzzle and answer tabs while fitting optional output dimensions. */
 export function Preview() {
+  const { t } = useI18n()
   const { state } = useWordSearch()
   const [activeTab, setActiveTab] = useState('with-answers')
   const measureRef = useRef<HTMLDivElement>(null)
@@ -39,7 +41,7 @@ export function Preview() {
   ) {
     return (
       <p className="text-muted-foreground">
-        Click Generate to create a word search
+        {t('previewEmpty')}
       </p>
     )
   }
@@ -110,13 +112,13 @@ export function Preview() {
             value="no-answers"
             className="px-4 text-base font-semibold data-active:bg-primary data-active:text-primary-foreground"
           >
-            Без ответов
+            {t('withoutAnswers')}
           </TabsTrigger>
           <TabsTrigger
             value="with-answers"
             className="px-4 text-base font-semibold data-active:bg-primary data-active:text-primary-foreground"
           >
-            С ответами
+            {t('withAnswers')}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="no-answers" className="flex justify-center">

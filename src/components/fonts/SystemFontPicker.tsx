@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/i18n'
 
 interface SystemFontPickerProps {
   value: string
@@ -28,6 +29,7 @@ type LocalFontAccessWindow = Window & {
 
 /** Selects an installed font when the browser grants Local Font Access. */
 export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [fonts, setFonts] = useState<LocalFontData[]>([])
   const [loading, setLoading] = useState(false)
@@ -40,7 +42,7 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
     try {
       const queryLocalFonts = (window as LocalFontAccessWindow).queryLocalFonts
       if (typeof queryLocalFonts !== 'function') {
-        setError('System font access is not available in this browser.')
+        setError(t('systemFontsUnavailable'))
         return
       }
       const result = await queryLocalFonts.call(window)
@@ -52,11 +54,11 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
       setFonts([...unique.values()].sort((left, right) =>
         left.family.localeCompare(right.family)))
     } catch {
-      setError('Unable to access system fonts.')
+      setError(t('systemFontsFailed'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   const filtered = search
     ? fonts.filter((font) =>
@@ -80,7 +82,7 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
           />
         }
       >
-        {value || 'Choose a system font...'}
+        {value || t('chooseSystemFont')}
       </PopoverTrigger>
       <PopoverContent className="w-72 p-2" align="start">
         <div className="mb-1.5 flex items-center gap-1">
@@ -88,7 +90,7 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
             <SearchIcon className="absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="h-7 pl-7 pr-2 text-xs"
-              placeholder="Search fonts..."
+              placeholder={t('searchFonts')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -102,14 +104,14 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
               void loadFonts()
             }}
             disabled={loading}
-            title="Refresh system fonts"
+            title={t('refreshSystemFonts')}
           >
             <RefreshCwIcon className={cn('size-3', loading && 'animate-spin')} />
           </Button>
         </div>
         {loading && (
           <p className="py-2 text-center text-xs text-muted-foreground">
-            Loading fonts...
+            {t('loadingFonts')}
           </p>
         )}
         {error && (

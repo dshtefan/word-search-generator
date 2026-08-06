@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select'
 import type { Language } from '@/domain/word-search'
 import { useWordSearch } from '@/store'
+import { useI18n } from '@/i18n'
 
 const LANGUAGE_OPTIONS: Array<{ value: Language; label: string }> = [
   { value: 'en', label: 'English' },
@@ -18,6 +19,7 @@ const LANGUAGE_OPTIONS: Array<{ value: Language; label: string }> = [
 
 /** Renders newline-edited words followed by the language card. */
 export function WordsSection() {
+  const { t } = useI18n()
   const { state, updateGeneration } = useWordSearch()
   const generation = state.settings.generation
 
@@ -25,7 +27,7 @@ export function WordsSection() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Words</CardTitle>
+          <CardTitle>{t('wordsInput')}</CardTitle>
         </CardHeader>
         <CardContent>
           <WordsInput
@@ -36,7 +38,7 @@ export function WordsSection() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Language</CardTitle>
+          <CardTitle>{t('puzzleLanguage')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1.5">
           <Select

@@ -2,9 +2,11 @@ import { GridSizeInputs } from '@/components/GridSizeInputs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ColorPicker } from '@/components/ui/color-picker'
 import { useWordSearch } from '@/store'
+import { useI18n } from '@/i18n'
 
 /** Renders grid dimensions followed by the highlight-color card. */
 export function GridSection() {
+  const { t } = useI18n()
   const { state, updateAppearance, updateGeneration } = useWordSearch()
   const { generation, appearance } = state.settings
 
@@ -12,7 +14,7 @@ export function GridSection() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Grid Size</CardTitle>
+          <CardTitle>{t('gridSize')}</CardTitle>
         </CardHeader>
         <CardContent>
           <GridSizeInputs
@@ -25,7 +27,7 @@ export function GridSection() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Highlight Color</CardTitle>
+          <CardTitle>{t('highlightColor')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1.5">
           <ColorPicker

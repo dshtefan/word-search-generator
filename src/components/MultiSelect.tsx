@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/popover"
 import { ChevronsUpDownIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useI18n } from '@/i18n'
 
 interface MultiSelectProps {
   options: { value: string; label: string }[]
@@ -21,13 +22,14 @@ function MultiSelect({
   options,
   selected,
   onChange,
-  placeholder = "Select...",
+  placeholder,
   ariaLabel,
 }: MultiSelectProps) {
+  const { t } = useI18n()
   const triggerLabel =
     selected.length > 0
-      ? `${selected.length} selected`
-      : placeholder
+      ? t('selectedCount', { count: selected.length })
+      : (placeholder ?? t('selectDirections'))
 
   function toggle(value: string) {
     if (selected.includes(value)) {

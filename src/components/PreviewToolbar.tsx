@@ -10,11 +10,22 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useWordSearch } from '@/store'
+import { useI18n, type InterfaceLocale } from '@/i18n'
+
+const INTERFACE_LANGUAGES: ReadonlyArray<{
+  readonly value: InterfaceLocale
+  readonly label: string
+}> = [
+  { value: 'en', label: 'English' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'de', label: 'Deutsch' },
+]
 
 const RESOLUTION_PRESETS = [
   { label: '800 × 600', width: 800, height: 600 },
   { label: '1024 × 768', width: 1024, height: 768 },
   { label: '1280 × 1024', width: 1280, height: 1024 },
+  { label: '1200 × 1600', width: 1200, height: 1600 },
   { label: '1920 × 1080', width: 1920, height: 1080 },
   { label: '2560 × 1440', width: 2560, height: 1440 },
 ]
@@ -32,6 +43,7 @@ const RATIO_PRESETS = [
 
 /** Edits the mutually exclusive preview/output sizing preferences. */
 export function PreviewToolbar() {
+  const { locale, setLocale, t } = useI18n()
   const { state, updateOutput } = useWordSearch()
   const output = state.settings.output
 
@@ -44,7 +56,7 @@ export function PreviewToolbar() {
             mode: checked ? 'resolution' : 'natural',
           })}
         />
-        Custom resolution
+        {t('customResolution')}
       </Label>
       {output.mode === 'resolution' && (
         <>
@@ -86,7 +98,7 @@ export function PreviewToolbar() {
             }}
           >
             <SelectTrigger className="h-7 text-xs" size="sm">
-              <SelectValue placeholder="Preset" />
+              <SelectValue placeholder={t('preset')} />
             </SelectTrigger>
             <SelectContent>
               {RESOLUTION_PRESETS.map((preset) => (
@@ -105,7 +117,7 @@ export function PreviewToolbar() {
             mode: checked ? 'aspect-ratio' : 'natural',
           })}
         />
-        Custom aspect ratio
+        {t('customAspectRatio')}
       </Label>
       {output.mode === 'aspect-ratio' && (
         <>
@@ -146,7 +158,7 @@ export function PreviewToolbar() {
             }}
           >
             <SelectTrigger className="h-7 text-xs" size="sm">
-              <SelectValue placeholder="Preset" />
+              <SelectValue placeholder={t('preset')} />
             </SelectTrigger>
             <SelectContent>
               {RATIO_PRESETS.map((preset) => (
@@ -159,6 +171,18 @@ export function PreviewToolbar() {
         </>
       )}
       <div className="flex-1" />
+      <select
+        aria-label={t('interfaceLanguage')}
+        className="h-7 min-w-28 rounded-lg border border-input bg-background px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        value={locale}
+        onChange={(event) => setLocale(event.target.value as InterfaceLocale)}
+      >
+        {INTERFACE_LANGUAGES.map((language) => (
+          <option key={language.value} value={language.value}>
+            {language.label}
+          </option>
+        ))}
+      </select>
       <Button
         variant="ghost"
         size="sm"
@@ -169,7 +193,7 @@ export function PreviewToolbar() {
           aspectRatio: { width: 16, height: 9 },
         })}
       >
-        Reset defaults
+        {t('resetDefaults')}
       </Button>
     </div>
   )

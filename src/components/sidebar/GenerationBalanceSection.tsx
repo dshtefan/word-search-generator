@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useWordSearch } from '@/store'
+import { useI18n } from '@/i18n'
 
 interface BalanceSliderProps {
   readonly label: string
@@ -33,22 +34,23 @@ function BalanceSlider({ label, value, onChange }: BalanceSliderProps) {
 
 /** Controls the soft crossing and spatial-distribution weights used by generation. */
 export function GenerationBalanceSection() {
+  const { t } = useI18n()
   const { state, updateGeneration } = useWordSearch()
   const { crossingPreference, spreadStrength } = state.settings.generation
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Generation Balance</CardTitle>
+        <CardTitle>{t('generationBalance')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <BalanceSlider
-          label="Crossing preference"
+          label={t('crossingPreference')}
           value={crossingPreference}
           onChange={(value) => updateGeneration({ crossingPreference: value })}
         />
         <BalanceSlider
-          label="Spread strength"
+          label={t('spreadStrength')}
           value={spreadStrength}
           onChange={(value) => updateGeneration({ spreadStrength: value })}
         />

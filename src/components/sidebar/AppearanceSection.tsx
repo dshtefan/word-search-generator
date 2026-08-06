@@ -13,6 +13,7 @@ import {
 import type { GridStyle } from '@/domain/word-search'
 import { useCustomFont } from '@/shared/useCustomFont'
 import { useWordSearch } from '@/store'
+import { useI18n } from '@/i18n'
 
 const FONT_OPTIONS = [
   'Inter',
@@ -32,16 +33,16 @@ const FONT_OPTIONS = [
 const FONT_SIZE_OPTIONS = [
   8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42,
 ] as const
-const GRID_STYLE_OPTIONS: Array<{ value: GridStyle; label: string }> = [
-  { value: 'full', label: 'Full Grid' },
-  { value: 'outer', label: 'Outer Border Only' },
-  { value: 'none', label: 'No Borders' },
-]
-
 /** Renders font controls followed by the grid-style card. */
 export function AppearanceSection() {
+  const { t } = useI18n()
   const { state, updateAppearance } = useWordSearch()
   const appearance = state.settings.appearance
+  const gridStyleOptions: Array<{ value: GridStyle; label: string }> = [
+    { value: 'full', label: t('gridStyleFull') },
+    { value: 'outer', label: t('gridStyleOuter') },
+    { value: 'none', label: t('gridStyleNone') },
+  ]
   useCustomFont(
     appearance.customFont.enabled,
     appearance.customFont.url,
@@ -52,11 +53,11 @@ export function AppearanceSection() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Font</CardTitle>
+          <CardTitle>{t('font')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="font-family">Font</Label>
+            <Label htmlFor="font-family">{t('font')}</Label>
             {!appearance.customFont.enabled && !appearance.localFont.enabled && (
               <Select
                 value={appearance.fontFamily}
@@ -84,7 +85,7 @@ export function AppearanceSection() {
                     },
                   })}
                 />
-                Custom Google Font
+                {t('customGoogleFont')}
               </Label>
               {appearance.customFont.enabled && (
                 <Input
@@ -112,7 +113,7 @@ export function AppearanceSection() {
                     },
                   })}
                 />
-                System font
+                {t('systemFont')}
               </Label>
               {appearance.localFont.enabled && (
                 <SystemFontPicker
@@ -126,7 +127,7 @@ export function AppearanceSection() {
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="font-size">Font Size</Label>
+            <Label htmlFor="font-size">{t('fontSize')}</Label>
             <Select
               value={String(appearance.fontSize)}
               onValueChange={(value) => updateAppearance({
@@ -147,7 +148,7 @@ export function AppearanceSection() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Grid Style</CardTitle>
+          <CardTitle>{t('gridStyle')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1.5">
           <Select
@@ -159,7 +160,7 @@ export function AppearanceSection() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {GRID_STYLE_OPTIONS.map((option) => (
+              {gridStyleOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>

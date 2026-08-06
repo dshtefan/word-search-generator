@@ -70,7 +70,7 @@ export function WordSearchProvider({
     if ('value' in outcome) {
       dispatch({ type: 'generation/succeeded', payload: outcome.value })
     } else {
-      dispatch({ type: 'generation/failed', payload: outcome.message })
+      dispatch({ type: 'generation/failed', payload: outcome.code })
     }
   }, [runtime.random, state.settings.generation])
   const saveGeneration = useCallback((name: string) => {

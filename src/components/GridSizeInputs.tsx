@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input"
 import { XIcon } from "lucide-react"
+import { useI18n } from '@/i18n'
 
 interface GridSizeInputsProps {
   gridX: number
@@ -14,6 +15,7 @@ function GridSizeInputs({
   onGridXChange,
   onGridYChange,
 }: GridSizeInputsProps) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
@@ -27,7 +29,7 @@ function GridSizeInputs({
             if (!Number.isNaN(v)) onGridXChange(v)
           }}
           className="w-20"
-          aria-label="Grid width"
+          aria-label={t('gridWidth')}
         />
         <XIcon className="size-4 shrink-0 text-muted-foreground" />
         <Input
@@ -40,7 +42,7 @@ function GridSizeInputs({
             if (!Number.isNaN(v)) onGridYChange(v)
           }}
           className="w-20"
-          aria-label="Grid height"
+          aria-label={t('gridHeight')}
         />
       </div>
     </div>
