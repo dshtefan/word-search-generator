@@ -34,8 +34,8 @@ describe('renderSvg', () => {
       '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20" font-family="A &amp; &lt;B&gt; &quot;C&quot;" font-size="12">',
       '<rect x="0" y="0" width="40" height="20" fill="#fff" />',
       '<line x1="10" y1="10" x2="30" y2="10" stroke="#f00&amp;&quot;" stroke-width="14" stroke-linecap="round" opacity="0.6" />',
-      '<text x="10" y="10" text-anchor="middle" dominant-baseline="central" fill="#000">&amp;&lt;&gt;&quot;</text>',
-      '<text x="30" y="10" text-anchor="middle" dominant-baseline="central" fill="#000">B</text>',
+      '<text x="10" y="10" text-anchor="middle" dominant-baseline="central" fill="#000" font-family="A &amp; &lt;B&gt; &quot;C&quot;" font-size="12">&amp;&lt;&gt;&quot;</text>',
+      '<text x="30" y="10" text-anchor="middle" dominant-baseline="central" fill="#000" font-family="A &amp; &lt;B&gt; &quot;C&quot;" font-size="12">B</text>',
       '<line x1="0.5" y1="0.5" x2="39.5" y2="0.5" stroke="#d1d5db" stroke-width="1" />',
       '<line x1="0.5" y1="19.5" x2="39.5" y2="19.5" stroke="#d1d5db" stroke-width="1" />',
       '<line x1="0.5" y1="0.5" x2="0.5" y2="19.5" stroke="#d1d5db" stroke-width="1" />',
@@ -43,6 +43,41 @@ describe('renderSvg', () => {
       '<line x1="39.5" y1="0.5" x2="39.5" y2="19.5" stroke="#d1d5db" stroke-width="1" />',
       '</svg>',
     ].join('\n'))
+  })
+
+  test('imports Montserrat and assigns its font attributes to every cell', () => {
+    const svg = renderSvg({
+      ...fullDocument,
+      font: { family: 'Montserrat', size: 12, style: 'italic', weight: 600 },
+    })
+    const textElements = svg.match(/<text\b[^>]*>/g) ?? []
+
+    expect(svg).toContain(
+      '<style>@import url(&quot;https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&amp;display=swap&quot;);</style>',
+    )
+    expect(textElements).toHaveLength(fullDocument.cells.length)
+    for (const textElement of textElements) {
+      expect(textElement).toContain('font-family="Montserrat"')
+      expect(textElement).toContain('font-size="12"')
+      expect(textElement).toContain('font-style="italic"')
+      expect(textElement).toContain('font-weight="600"')
+    }
+  })
+
+  test.each([
+    ['Inter', 'Inter:wght@400;500;600'],
+    ['Arial', undefined],
+    ['An unknown family', undefined],
+  ])('imports the mapped standard font %s only when available', (family, specification) => {
+    const svg = renderSvg({ ...fullDocument, font: { family, size: 12 } })
+
+    if (specification === undefined) {
+      expect(svg).not.toContain('https://fonts.googleapis.com/css2?family=')
+      return
+    }
+    expect(svg).toContain(
+      `<style>@import url(&quot;https://fonts.googleapis.com/css2?family=${specification}&amp;display=swap&quot;);</style>`,
+    )
   })
 
   test('renders an outer border without internal grid lines', () => {
@@ -136,7 +171,7 @@ describe('renderSvg', () => {
     const svg = renderSvg({
       ...fullDocument,
       font: {
-        family: 'Remote',
+        family: 'Montserrat',
         size: 12,
         customUrl: 'https://example.com/font.css?family=A&B',
       },
@@ -145,6 +180,23 @@ describe('renderSvg', () => {
     expect(svg).toContain(
       '<style>@import url(&quot;https://example.com/font.css?family=A&amp;B&quot;);</style>',
     )
+    expect(svg).not.toContain('https://fonts.googleapis.com/css2?family=')
+  })
+
+  test('prefers a local Montserrat source over the standard web-font import', () => {
+    const svg = renderSvg({
+      ...fullDocument,
+      font: {
+        family: 'Montserrat',
+        size: 12,
+        localFullName: 'Montserrat Local',
+      },
+    })
+
+    expect(svg).toContain(
+      '<style>@font-face { font-family: &quot;Montserrat&quot;; src: local(&quot;Montserrat Local&quot;); }</style>',
+    )
+    expect(svg).not.toContain('https://fonts.googleapis.com/css2?family=')
   })
 
   test.each([

@@ -34,6 +34,7 @@ interface PlacementCandidate {
   readonly x: number
   readonly y: number
   readonly direction: Direction
+  readonly crowdingScore: number
   readonly overlapCount: number
 }
 
@@ -120,13 +121,23 @@ function getCandidates(
       }
 
       if (compatible) {
-        candidates.push({ ...start, direction, overlapCount })
+        const crowdingScore = placementCells.reduce((total, cell) => {
+          let occupiedCells = 0
+          for (let y = Math.max(0, cell.y - 1); y <= Math.min(height - 1, cell.y + 1); y += 1) {
+            for (let x = Math.max(0, cell.x - 1); x <= Math.min(width - 1, cell.x + 1); x += 1) {
+              if (grid[y][x].letter !== '') occupiedCells += 1
+            }
+          }
+          return total + occupiedCells
+        }, 0)
+        candidates.push({ ...start, direction, crowdingScore, overlapCount })
       }
     }
   }
 
   return candidates.sort((left, right) =>
-    directionUsage[left.direction] - directionUsage[right.direction]
+    left.crowdingScore - right.crowdingScore
+    || directionUsage[left.direction] - directionUsage[right.direction]
     || right.overlapCount - left.overlapCount,
   )
 }

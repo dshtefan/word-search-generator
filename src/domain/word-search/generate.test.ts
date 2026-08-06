@@ -160,6 +160,34 @@ test('preserves both words at identical-letter crossings', () => {
   expect(occupiedCoordinates[1]).toEqual(['0,0', '1,0', '2,0'])
 })
 
+test('prefers an uncrowded placement over an overlapping placement', () => {
+  const result = generateWordSearch({
+    words: ['a', 'a'],
+    directions: ['right'],
+    width: 5,
+    height: 1,
+    language: 'en',
+  }, { random: zeroRandom })
+  const [first, second] = result.placements
+  const occupiedCells = new Set(
+    getPlacementCells(first, first.direction, Array.from(first.word).length)
+      .map(({ x, y }) => `${x},${y}`),
+  )
+  const occupiedNeighborhoodCount = (placement: WordPlacement): number =>
+    getPlacementCells(placement, placement.direction, Array.from(placement.word).length)
+      .reduce((total, cell) => total + [...occupiedCells].filter((occupiedCell) => {
+        const [x, y] = occupiedCell.split(',').map(Number)
+        return x >= cell.x - 1 && x <= cell.x + 1
+          && y >= cell.y - 1 && y <= cell.y + 1
+      }).length, 0)
+
+  const overlappingCandidate = { ...second, x: first.x, y: first.y }
+
+  expect(occupiedNeighborhoodCount(overlappingCandidate)).toBe(1)
+  expect(occupiedNeighborhoodCount(second)).toBe(0)
+  expect(second).toMatchObject({ x: 3, y: 0, direction: 'right' })
+})
+
 test('restores cells while backtracking from an incompatible early placement', () => {
   const result = generateWordSearch({
     words: ['ab', 'ac', 'bc'],

@@ -1,6 +1,17 @@
 import type { ExportDocument, ExportFont } from './types'
 import { assertPositiveDimensions } from './geometry'
 
+const STANDARD_FONT_SPECS: Readonly<Record<string, string>> = {
+  Inter: 'Inter:wght@400;500;600',
+  Roboto: 'Roboto:wght@400;500',
+  'Open Sans': 'Open+Sans:wght@400;500;600',
+  Lato: 'Lato:wght@400;700',
+  Montserrat: 'Montserrat:wght@400;500;600',
+  Raleway: 'Raleway:wght@400;500;600',
+  Poppins: 'Poppins:wght@400;500;600',
+  Nunito: 'Nunito:wght@400;500;600',
+}
+
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -34,17 +45,26 @@ function getHttpFontUrl(rawUrl: string): string {
 
 function renderFontStyles(font: ExportFont): string[] {
   const styles: string[] = []
+  const installedName = font.localFullName?.trim() || font.localFamily?.trim()
   if (font.customUrl !== undefined) {
     const url = escapeXml(escapeCssString(getHttpFontUrl(font.customUrl)))
     styles.push(`<style>@import url(&quot;${url}&quot;);</style>`)
   }
-  const installedName = font.localFullName?.trim() || font.localFamily?.trim()
   if (installedName) {
     const family = escapeXml(escapeCssString(font.family))
     const source = escapeXml(escapeCssString(installedName))
     styles.push(
       `<style>@font-face { font-family: &quot;${family}&quot;; src: local(&quot;${source}&quot;); }</style>`,
     )
+  }
+  if (font.customUrl === undefined && !installedName) {
+    const specification = STANDARD_FONT_SPECS[font.family]
+    if (specification !== undefined) {
+      const url = escapeXml(escapeCssString(getHttpFontUrl(
+        `https://fonts.googleapis.com/css2?family=${specification}&display=swap`,
+      )))
+      styles.push(`<style>@import url(&quot;${url}&quot;);</style>`)
+    }
   }
   return styles
 }
@@ -106,7 +126,7 @@ export function renderSvg(document: ExportDocument): string {
       (path) => `<line x1="${path.x1}" y1="${path.y1}" x2="${path.x2}" y2="${path.y2}" stroke="${escapeXml(document.highlightColor)}" stroke-width="${path.strokeWidth}" stroke-linecap="round" opacity="0.6" />`,
     ),
     ...document.cells.map((cell) =>
-      `<text x="${cell.x + cell.width / 2}" y="${cell.y + cell.height / 2}" text-anchor="middle" dominant-baseline="central" fill="#000">${escapeXml(cell.letter)}</text>`,
+      `<text x="${cell.x + cell.width / 2}" y="${cell.y + cell.height / 2}" text-anchor="middle" dominant-baseline="central" fill="#000" ${fontAttributes}>${escapeXml(cell.letter)}</text>`,
     ),
     ...renderBorders(document),
     '</svg>',
