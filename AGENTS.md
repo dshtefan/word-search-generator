@@ -12,16 +12,21 @@
 - `src/store`: state types, reducer, persistence runtime, provider, and
   `useWordSearch` intent facade.
 - `src/components`: UI sections and primitives; `src/app/App.tsx` composes the
-  application; `src/shared` holds cross-cutting helpers; `src/test` holds test
-  setup and provider-aware render helpers.
+  application. `src/shared` holds cross-cutting helpers, `src/lib/utils.ts`
+  holds general UI utilities, `src/main.tsx` mounts the app, `src/index.css`
+  supplies global styles, and `src/test` holds test setup and provider-aware
+  render helpers.
 
 ## Dependency rules
 
 - Keep `src/domain/word-search` pure: no React, browser APIs, store,
   components, or feature imports.
 - Features may use the domain and required store/snapshot types. The store may
-  compose domain and features. Components use the store facade and must not
-  duplicate domain, persistence, or export logic.
+  compose domain and features. Components may consume the store facade, domain
+  and feature types/helpers, shared helpers, and `src/lib` utilities; those
+  inward layers must not depend on components. Prefer intent-level store
+  commands for state changes, and do not duplicate domain, persistence, or
+  export logic.
 - Export document construction and SVG rendering are pure. Exports consume
   snapshots/domain data and injected ports; never scrape a rendered table or
   any other live DOM output.

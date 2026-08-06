@@ -9,15 +9,20 @@
 | `src/features/saved-generations` | Immutable saved snapshots and strict browser-storage repository. | Domain and store types. |
 | `src/features/export` | Export-document construction, pure SVG rendering, raster/PDF adapters, downloading, and ZIP packaging. | Domain, saved-generation types, store types, and shared font parsing. |
 | `src/store` | Application state, reducer, persistence runtime, React provider, and intent-level context facade. | Domain and features. |
-| `src/components` | Presentational/editor UI and UI primitives. | Store and component-local helpers; it must not reimplement domain, persistence, or export logic. |
+| `src/components` | Presentational/editor UI and UI primitives. | The store facade plus inward domain/feature types and helpers, shared helpers, `src/lib`, and component-local modules; none of those layers may depend on components. |
 | `src/shared` | Small cross-cutting helpers that do not belong to a feature. | Domain-independent utilities only. |
+| `src/lib` | General UI utility helpers such as `cn`. | Third-party utility packages only. |
 | `src/app` | Top-level composition of the provider and UI sections. | Components and store. |
+| `src/main.tsx` | React entry point that mounts the application. | App and global styles. |
+| `src/index.css` | Global Tailwind and application styles. | CSS imports only. |
 | `src/test` | Jest setup and provider-aware rendering helpers. | Application modules and test libraries. |
 
 Keep dependencies flowing toward the domain and feature contracts: the domain
 must not import React, browser APIs, the store, components, or features. The
 export document builder and SVG renderer must remain independent of React and
-the live DOM. Use `@/` for imports rooted at `src`.
+the live DOM. Components may read domain/feature types and helpers where they
+render or configure a supported contract, but state changes should prefer the
+intent-level `useWordSearch()` commands. Use `@/` for imports rooted at `src`.
 
 ## Generation and state flow
 
