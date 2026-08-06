@@ -17,6 +17,7 @@ module.exports = {
     }],
   },
   setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  testPathIgnorePatterns: ['<rootDir>/.worktrees/'],
   collectCoverageFrom: [
     'src/domain/**/*.{ts,tsx}',
     'src/features/**/*.{ts,tsx}',
