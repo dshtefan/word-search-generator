@@ -25,6 +25,12 @@ function patchGeneration(
   settings: GenerationSettings,
   patch: Partial<GenerationSettings>,
 ): GenerationSettings {
+  const clampPercentage = (value: number | undefined, current: number) => {
+    if (value === undefined) return current
+    if (!Number.isFinite(value)) return 0
+    return Math.min(100, Math.max(0, value))
+  }
+
   return {
     ...settings,
     ...definedPatch(patch),
@@ -35,6 +41,11 @@ function patchGeneration(
     diagonalDirections: patch.diagonalDirections === undefined
       ? settings.diagonalDirections
       : [...patch.diagonalDirections],
+    crossingPreference: clampPercentage(
+      patch.crossingPreference,
+      settings.crossingPreference,
+    ),
+    spreadStrength: clampPercentage(patch.spreadStrength, settings.spreadStrength),
   }
 }
 

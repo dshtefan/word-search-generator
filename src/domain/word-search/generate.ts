@@ -1,4 +1,4 @@
-import { getPlacementCells } from './directions'
+import { DIRECTION_VECTORS, getPlacementCells } from './directions'
 import { WordSearchError } from './errors'
 import { getRandomLetter } from './letters'
 import type {
@@ -13,8 +13,9 @@ import type {
 import { validateGenerationInput } from './validate'
 
 const DEFAULT_MAX_ATTEMPTS = 10_000
-const CROSSING_REWARD = 2
+const DEFAULT_BALANCE = 50
 const COMPLETE_OVERLAP_PENALTY = 1
+const COLLINEAR_OVERLAP_PENALTY = 4
 
 interface MutableCell {
   letter: string
@@ -38,6 +39,7 @@ interface PlacementCandidate {
   readonly direction: Direction
   readonly distributionScore: number
   readonly overlapCount: number
+  readonly angularOverlapCount: number
 }
 
 /** Controls randomness and the amount of backtracking permitted during generation. */
@@ -46,6 +48,16 @@ export interface GenerateWordSearchOptions {
   readonly random?: RandomSource
   /** Finite, non-negative integer candidate limit. Defaults to 10,000. */
   readonly maxAttempts?: number
+  /** Soft preference for partial crossings, from 0 to 100. Defaults to 50. */
+  readonly crossingPreference?: number
+  /** Soft preference for distance from occupied cells, from 0 to 100. Defaults to 50. */
+  readonly spreadStrength?: number
+}
+
+function normalizeBalance(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_BALANCE
+  if (!Number.isFinite(value)) return DEFAULT_BALANCE
+  return Math.min(100, Math.max(0, value))
 }
 
 function shuffle<T>(values: readonly T[], random: RandomSource): T[] {
@@ -87,10 +99,39 @@ function isInBounds(
   return x >= 0 && x < width && y >= 0 && y < height
 }
 
+function areDirectionsCollinear(left: Direction, right: Direction): boolean {
+  const leftVector = DIRECTION_VECTORS[left]
+  const rightVector = DIRECTION_VECTORS[right]
+  return leftVector.x * rightVector.y === leftVector.y * rightVector.x
+}
+
+function getOccupiedDirections(
+  placements: readonly WordPlacement[],
+): ReadonlyMap<string, readonly Direction[]> {
+  const directionsByCell = new Map<string, Direction[]>()
+  for (const placement of placements) {
+    for (const { x, y } of getPlacementCells(
+      placement,
+      placement.direction,
+      Array.from(placement.word).length,
+    )) {
+      const coordinate = `${x},${y}`
+      directionsByCell.set(coordinate, [
+        ...(directionsByCell.get(coordinate) ?? []),
+        placement.direction,
+      ])
+    }
+  }
+  return directionsByCell
+}
+
 function getDistributionScore(
   placementCells: readonly { readonly x: number; readonly y: number }[],
   grid: readonly (readonly MutableCell[])[],
   overlapCount: number,
+  collinearOverlapCount: number,
+  crossingPreference: number,
+  spreadStrength: number,
 ): number {
   const placementCoordinates = new Set(
     placementCells.map(({ x, y }) => `${x},${y}`),
@@ -109,13 +150,20 @@ function getDistributionScore(
     return total + occupiedNeighbors
   }, 0)
   const neighboringDensity = neighboringOccupancy / placementCells.length
-  const isPartialCrossing = overlapCount > 0 && overlapCount < placementCells.length
-  const crossingReward = isPartialCrossing ? overlapCount * CROSSING_REWARD : 0
+  const angularOverlapCount = overlapCount - collinearOverlapCount
+  const isPartialCrossing = angularOverlapCount > 0
+    && overlapCount < placementCells.length
+  const crossingReward = isPartialCrossing
+    ? angularOverlapCount * (crossingPreference / 25)
+    : 0
   const completeOverlapPenalty = overlapCount === placementCells.length
     ? COMPLETE_OVERLAP_PENALTY
     : 0
 
-  return neighboringDensity - crossingReward + completeOverlapPenalty
+  return neighboringDensity * (spreadStrength / 50)
+    - crossingReward
+    + collinearOverlapCount * COLLINEAR_OVERLAP_PENALTY
+    + completeOverlapPenalty
 }
 
 function getCandidates(
@@ -124,6 +172,9 @@ function getCandidates(
   directions: readonly Direction[],
   directionUsage: Readonly<Record<Direction, number>>,
   random: RandomSource,
+  placements: readonly WordPlacement[],
+  crossingPreference: number,
+  spreadStrength: number,
 ): PlacementCandidate[] {
   const height = grid.length
   const width = grid[0].length
@@ -133,6 +184,7 @@ function getCandidates(
   }))
   const candidates: PlacementCandidate[] = []
   const shuffledDirections = shuffle(directions, random)
+  const occupiedDirections = getOccupiedDirections(placements)
 
   for (const start of shuffle(cells, random)) {
     for (const direction of shuffledDirections) {
@@ -142,6 +194,7 @@ function getCandidates(
       }
 
       let overlapCount = 0
+      let collinearOverlapCount = 0
       let compatible = true
       for (let index = 0; index < placementCells.length; index += 1) {
         const { x, y } = placementCells[index]
@@ -150,7 +203,14 @@ function getCandidates(
           compatible = false
           break
         }
-        if (existingLetter === word.letters[index]) overlapCount += 1
+        if (existingLetter === word.letters[index]) {
+          overlapCount += 1
+          const existingDirections = occupiedDirections.get(`${x},${y}`) ?? []
+          if (existingDirections.some((existingDirection) =>
+            areDirectionsCollinear(direction, existingDirection))) {
+            collinearOverlapCount += 1
+          }
+        }
       }
 
       if (compatible) {
@@ -158,8 +218,17 @@ function getCandidates(
           placementCells,
           grid,
           overlapCount,
+          collinearOverlapCount,
+          crossingPreference,
+          spreadStrength,
         )
-        candidates.push({ ...start, direction, distributionScore, overlapCount })
+        candidates.push({
+          ...start,
+          direction,
+          distributionScore,
+          overlapCount,
+          angularOverlapCount: overlapCount - collinearOverlapCount,
+        })
       }
     }
   }
@@ -167,7 +236,9 @@ function getCandidates(
   return candidates.sort((left, right) =>
     left.distributionScore - right.distributionScore
     || directionUsage[left.direction] - directionUsage[right.direction]
-    || right.overlapCount - left.overlapCount,
+    || (crossingPreference > 0
+      ? right.angularOverlapCount - left.angularOverlapCount
+      : 0),
   )
 }
 
@@ -210,6 +281,8 @@ export function generateWordSearch(
 
   const random = options.random ?? Math.random
   const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS
+  const crossingPreference = normalizeBalance(options.crossingPreference)
+  const spreadStrength = normalizeBalance(options.spreadStrength)
   if (!Number.isFinite(maxAttempts) || !Number.isInteger(maxAttempts) || maxAttempts < 0) {
     throw new WordSearchError(
       'PLACEMENT_EXHAUSTED',
@@ -238,6 +311,9 @@ export function generateWordSearch(
       input.directions,
       directionUsage,
       random,
+      placements,
+      crossingPreference,
+      spreadStrength,
     )
 
     for (const candidate of candidates) {

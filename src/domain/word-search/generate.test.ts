@@ -1,5 +1,6 @@
 import { getPlacementCells } from './directions'
 import { generateWordSearch } from './index'
+import type { GenerateWordSearchOptions } from './generate'
 import type {
   Direction,
   GenerationInput,
@@ -209,6 +210,54 @@ test('allows a clean crossing while uncrowded placements remain available', () =
   expect(sharedCoordinates).toHaveLength(1)
   expect(new Set(occupiedCoordinates.flatMap((coordinates) => [...coordinates])).size)
     .toBeLessThan(6)
+})
+
+test('uses crossing preference and spread strength to change placement balance', () => {
+  const input = {
+    words: ['abc', 'bxy'],
+    directions: ['right', 'down'] as Direction[],
+    width: 5,
+    height: 5,
+    language: 'en' as const,
+  }
+  const sharedCellCount = (options: GenerateWordSearchOptions) => {
+    const placements = generateWordSearch(input, { random: zeroRandom, ...options }).placements
+    const occupied = placements.map((placement) => new Set(getPlacementCells(
+      placement,
+      placement.direction,
+      Array.from(placement.word).length,
+    ).map(({ x, y }) => `${x},${y}`)))
+    return [...occupied[0]].filter((coordinate) => occupied[1].has(coordinate)).length
+  }
+
+  expect(sharedCellCount({ crossingPreference: 100, spreadStrength: 0 })).toBe(1)
+  expect(sharedCellCount({ crossingPreference: 0, spreadStrength: 100 })).toBe(0)
+})
+
+test('prefers an angled crossing over placing matching words on one line', () => {
+  const result = generateWordSearch({
+    words: ['abcde', 'cde'],
+    directions: ['right', 'down'],
+    width: 7,
+    height: 7,
+    language: 'en',
+  }, {
+    random: zeroRandom,
+    crossingPreference: 100,
+    spreadStrength: 0,
+  })
+  const [first, second] = result.placements
+  const firstCells = new Set(getPlacementCells(
+    first,
+    first.direction,
+    first.word.length,
+  ).map(({ x, y }) => `${x},${y}`))
+  const sharedCells = getPlacementCells(second, second.direction, second.word.length)
+    .filter(({ x, y }) => firstCells.has(`${x},${y}`))
+
+  expect(sharedCells).toHaveLength(1)
+  expect(DIRECTION_DELTAS[first.direction][0] * DIRECTION_DELTAS[second.direction][1])
+    .not.toBe(DIRECTION_DELTAS[first.direction][1] * DIRECTION_DELTAS[second.direction][0])
 })
 
 test('restores cells while backtracking from an incompatible early placement', () => {

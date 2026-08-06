@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { WordSearchProvider } from '@/store'
 import { Preview } from '@/components/preview/Preview'
@@ -101,6 +101,7 @@ describe('Sidebar', () => {
       'Grid Size',
       'Highlight Color',
       'Directions',
+      'Generation Balance',
       'Font',
       'Grid Style',
     ])
@@ -108,5 +109,26 @@ describe('Sidebar', () => {
     expect(screen.getByRole('button', { name: 'Save generation' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Reset to defaults' })).toBeEnabled()
+  })
+
+  test('exposes generation balance controls with neutral defaults', () => {
+    render(
+      <WordSearchProvider>
+        <Sidebar />
+      </WordSearchProvider>,
+    )
+
+    const crossing = screen.getByRole('slider', { name: 'Crossing preference' })
+    const spread = screen.getByRole('slider', { name: 'Spread strength' })
+    expect(crossing).toHaveValue('50')
+    expect(spread).toHaveValue('50')
+
+    fireEvent.change(crossing, { target: { value: '80' } })
+    fireEvent.change(spread, { target: { value: '20' } })
+
+    expect(crossing).toHaveValue('80')
+    expect(spread).toHaveValue('20')
+    expect(screen.getByText('80%')).toBeVisible()
+    expect(screen.getByText('20%')).toBeVisible()
   })
 })

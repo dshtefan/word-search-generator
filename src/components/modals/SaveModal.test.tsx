@@ -42,6 +42,8 @@ const saved: SavedGeneration = {
       height: 1,
       cardinalDirections: ['right'],
       diagonalDirections: [],
+      crossingPreference: 50,
+      spreadStrength: 50,
     },
     appearance: {
       highlightColor: '#90a4ae',

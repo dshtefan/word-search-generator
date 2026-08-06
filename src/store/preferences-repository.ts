@@ -1,5 +1,6 @@
 import {
   isWordSearchSettings,
+  migrateLegacyWordSearchSettings,
   type StorageAdapter,
 } from '@/features/saved-generations/repository'
 import { createInitialState } from './initial-state'
@@ -21,21 +22,24 @@ function decodeEnvelope(raw: string): WordSearchSettings | null {
   const parsed: unknown = JSON.parse(raw)
   if (!isRecord(parsed)
     || Object.keys(parsed).length !== 2
-    || parsed.version !== 1
     || !Object.prototype.hasOwnProperty.call(parsed, 'data')
-    || !isWordSearchSettings(parsed.data)
   ) {
     return null
   }
 
-  return parsed.data
+  if (parsed.version === 2) {
+    return isWordSearchSettings(parsed.data) ? parsed.data : null
+  }
+  return parsed.version === 1
+    ? migrateLegacyWordSearchSettings(parsed.data)
+    : null
 }
 
 function freshDefaults(): WordSearchSettings {
   return createInitialState().settings
 }
 
-/** Creates strict version-1 settings persistence with fresh-default recovery. */
+/** Creates version-2 settings persistence with version-1 migration. */
 export function createPreferencesRepository(
   storage: StorageAdapter,
   key = DEFAULT_STORAGE_KEY,
@@ -51,7 +55,7 @@ export function createPreferencesRepository(
     },
     save(settings) {
       try {
-        storage.setItem(key, JSON.stringify({ version: 1, data: settings }))
+        storage.setItem(key, JSON.stringify({ version: 2, data: settings }))
         return true
       } catch {
         return false

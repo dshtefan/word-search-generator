@@ -26,7 +26,12 @@ describe('createPreferencesRepository', () => {
     settings.generation.width = 24
     settings.appearance.fontSize = 36
     settings.output.mode = 'aspect-ratio'
-    storage.values.set('preferences-key', JSON.stringify({ version: 1, data: settings }))
+    const legacy = structuredClone(settings) as unknown as {
+      generation: Record<string, unknown>
+    }
+    delete legacy.generation.crossingPreference
+    delete legacy.generation.spreadStrength
+    storage.values.set('preferences-key', JSON.stringify({ version: 1, data: legacy }))
 
     expect(createPreferencesRepository(storage, 'preferences-key').load()).toEqual(settings)
   })
@@ -34,13 +39,23 @@ describe('createPreferencesRepository', () => {
   test.each([
     ['missing content', null],
     ['invalid JSON', '{'],
-    ['unsupported version', JSON.stringify({ version: 2, data: {} })],
+    ['unsupported version', JSON.stringify({ version: 3, data: {} })],
     ['missing settings fields', JSON.stringify({ version: 1, data: { generation: {} } })],
     ['invalid settings enum', JSON.stringify({
       version: 1,
       data: {
         ...createInitialState().settings,
         output: { ...createInitialState().settings.output, mode: 'fixed' },
+      },
+    })],
+    ['invalid generation balance', JSON.stringify({
+      version: 2,
+      data: {
+        ...createInitialState().settings,
+        generation: {
+          ...createInitialState().settings.generation,
+          crossingPreference: 101,
+        },
       },
     })],
   ])('returns fresh defaults for %s', (_label, raw) => {
@@ -60,13 +75,13 @@ describe('createPreferencesRepository', () => {
     expect(first.output.resolution).not.toBe(second.output.resolution)
   })
 
-  test('saves only settings in a version-1 envelope', () => {
+  test('saves only settings in a version-2 envelope', () => {
     const storage = new MemoryStorage()
     const settings = createInitialState().settings
 
     expect(createPreferencesRepository(storage, 'preferences-key').save(settings)).toBe(true)
     expect(JSON.parse(storage.values.get('preferences-key') ?? '')).toEqual({
-      version: 1,
+      version: 2,
       data: settings,
     })
   })

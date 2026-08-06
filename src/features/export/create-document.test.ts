@@ -15,6 +15,8 @@ const snapshot: SavedGeneration = {
       height: 3,
       cardinalDirections: ['right', 'down'],
       diagonalDirections: [],
+      crossingPreference: 50,
+      spreadStrength: 50,
     },
     appearance: {
       highlightColor: '#123456',

@@ -3,6 +3,7 @@ import { ActionsSection } from './ActionsSection'
 import { AppearanceSection } from './AppearanceSection'
 import { DirectionsSection } from './DirectionsSection'
 import { GridSection } from './GridSection'
+import { GenerationBalanceSection } from './GenerationBalanceSection'
 import { WordsSection } from './WordsSection'
 
 /** Composes the existing sidebar cards in their established visual order. */
@@ -16,6 +17,7 @@ export function Sidebar() {
         <GridSection />
         <DirectionsSection />
         <AppearanceSection />
+        <GenerationBalanceSection />
       </div>
       <Separator className="my-2" />
       <ActionsSection />

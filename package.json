@@ -1,7 +1,7 @@
 {
   "name": "word-search",
   "private": true,
-  "version": "0.0.11",
+  "version": "0.1.0",
   "type": "module",
   "repository": {
     "type": "git",
@@ -10,13 +10,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:preview": "tsc -b && vite build --base=/word-search-generator/preview/",
     "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "deploy:preview": "npm run build:preview && gh-pages -d dist --dest preview --add"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

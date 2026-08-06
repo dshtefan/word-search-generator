@@ -25,6 +25,8 @@ export function createInitialState(): WordSearchState {
         height: 19,
         cardinalDirections: ['up', 'down', 'left', 'right'],
         diagonalDirections: ['up-left', 'up-right', 'down-left', 'down-right'],
+        crossingPreference: 50,
+        spreadStrength: 50,
       },
       appearance: {
         highlightColor: '#90a4ae',

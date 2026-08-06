@@ -32,6 +32,8 @@ function createSnapshot(
         height: 1,
         cardinalDirections: ['right'],
         diagonalDirections: [],
+        crossingPreference: 50,
+        spreadStrength: 50,
       },
       appearance: {
         highlightColor: '#123456',

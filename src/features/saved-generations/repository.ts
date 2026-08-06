@@ -62,6 +62,10 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
+function isPercentage(value: unknown): value is number {
+  return isFiniteNumber(value) && value >= 0 && value <= 100
+}
+
 function isPositiveNumber(value: unknown): value is number {
   return isFiniteNumber(value) && value > 0
 }
@@ -116,6 +120,8 @@ export function isWordSearchSettings(value: unknown): value is WordSearchSetting
       'height',
       'cardinalDirections',
       'diagonalDirections',
+      'crossingPreference',
+      'spreadStrength',
     ])
     || !Array.isArray(generation.words)
     || !generation.words.every(isString)
@@ -124,6 +130,8 @@ export function isWordSearchSettings(value: unknown): value is WordSearchSetting
     || !isPositiveInteger(generation.height)
     || !isDirectionArray(generation.cardinalDirections, CARDINAL_DIRECTIONS)
     || !isDirectionArray(generation.diagonalDirections, DIAGONAL_DIRECTIONS)
+    || !isPercentage(generation.crossingPreference)
+    || !isPercentage(generation.spreadStrength)
   ) {
     return false
   }
@@ -160,6 +168,40 @@ export function isWordSearchSettings(value: unknown): value is WordSearchSetting
     && isEnumMember(output.mode, OUTPUT_MODES)
     && isDimensions(output.resolution)
     && isDimensions(output.aspectRatio)
+}
+
+/** Adds neutral generation-balance defaults to valid version-1 settings. */
+export function migrateLegacyWordSearchSettings(
+  value: unknown,
+): WordSearchSettings | null {
+  if (isWordSearchSettings(value)) return value
+  if (!isRecord(value) || !hasExactKeys(value, ['generation', 'appearance', 'output'])) {
+    return null
+  }
+
+  const generation = value.generation
+  if (!isRecord(generation)
+    || !hasExactKeys(generation, [
+      'words',
+      'language',
+      'width',
+      'height',
+      'cardinalDirections',
+      'diagonalDirections',
+    ])
+  ) {
+    return null
+  }
+
+  const migrated = {
+    ...value,
+    generation: {
+      ...generation,
+      crossingPreference: 50,
+      spreadStrength: 50,
+    },
+  }
+  return isWordSearchSettings(migrated) ? migrated : null
 }
 
 function isGrid(value: unknown, width: number, height: number): value is Grid {
@@ -274,21 +316,46 @@ function isSavedGeneration(value: unknown): value is SavedGeneration {
   return isWordSearchResult(value.result, value.settings)
 }
 
-function decodeEnvelope(raw: string): SavedGeneration[] | null {
-  const parsed: unknown = JSON.parse(raw)
-  if (!isRecord(parsed)
-    || !hasExactKeys(parsed, ['version', 'data'])
-    || parsed.version !== 1
-    || !Array.isArray(parsed.data)
-    || !parsed.data.every(isSavedGeneration)
+function migrateLegacySavedGeneration(value: unknown): SavedGeneration | null {
+  if (!isRecord(value)
+    || !hasExactKeys(value, ['id', 'name', 'createdAt', 'settings', 'result'])
+    || !isString(value.id)
+    || value.id.length === 0
+    || !isString(value.name)
+    || value.name.trim().length === 0
+    || !isNonNegativeInteger(value.createdAt)
   ) {
     return null
   }
 
-  return parsed.data
+  const settings = migrateLegacyWordSearchSettings(value.settings)
+  if (settings === null || !isWordSearchResult(value.result, settings)) return null
+
+  return { ...value, settings } as SavedGeneration
 }
 
-/** Creates strict version-1 saved-generation persistence over Web Storage. */
+function decodeEnvelope(raw: string): SavedGeneration[] | null {
+  const parsed: unknown = JSON.parse(raw)
+  if (!isRecord(parsed)
+    || !hasExactKeys(parsed, ['version', 'data'])
+    || !Array.isArray(parsed.data)
+  ) {
+    return null
+  }
+
+  if (parsed.version === 2) {
+    return parsed.data.every(isSavedGeneration) ? parsed.data : null
+  }
+  if (parsed.version === 1) {
+    const migrated = parsed.data.map(migrateLegacySavedGeneration)
+    return migrated.every((item) => item !== null)
+      ? migrated as SavedGeneration[]
+      : null
+  }
+  return null
+}
+
+/** Creates version-2 saved-generation persistence with version-1 migration. */
 export function createSavedGenerationsRepository(
   storage: StorageAdapter,
   key = DEFAULT_STORAGE_KEY,
@@ -304,7 +371,7 @@ export function createSavedGenerationsRepository(
     },
     save(items) {
       try {
-        storage.setItem(key, JSON.stringify({ version: 1, data: items }))
+        storage.setItem(key, JSON.stringify({ version: 2, data: items }))
         return true
       } catch {
         return false

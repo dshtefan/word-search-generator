@@ -35,6 +35,8 @@ function createReadyState() {
         height: 2,
         cardinalDirections: ['right' as const],
         diagonalDirections: ['down-right' as const],
+        crossingPreference: 50,
+        spreadStrength: 50,
       },
       appearance: {
         highlightColor: '#123456',

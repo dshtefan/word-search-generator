@@ -37,7 +37,11 @@ export function runGeneration(
       width: settings.width,
       height: settings.height,
       language: settings.language,
-    }, options)
+    }, {
+      ...options,
+      crossingPreference: settings.crossingPreference,
+      spreadStrength: settings.spreadStrength,
+    })
 
     return { ok: true, value }
   } catch (cause: unknown) {

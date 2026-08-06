@@ -17,6 +17,10 @@ export interface GenerationSettings {
   height: number
   cardinalDirections: Direction[]
   diagonalDirections: Direction[]
+  /** Soft preference for partial word crossings, from 0 to 100. */
+  crossingPreference: number
+  /** Soft preference for placing words away from occupied cells, from 0 to 100. */
+  spreadStrength: number
 }
 
 /** Describes an optional web-hosted custom font. */

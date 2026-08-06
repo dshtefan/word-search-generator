@@ -132,6 +132,16 @@ describe('wordSearchReducer', () => {
     expect(nextState.settings.generation.width).toBe(19)
   })
 
+  test('clamps generation balance values to percentages', () => {
+    const nextState = wordSearchReducer(createInitialState(), {
+      type: 'generation/changed',
+      payload: { crossingPreference: 125, spreadStrength: -20 },
+    })
+
+    expect(nextState.settings.generation.crossingPreference).toBe(100)
+    expect(nextState.settings.generation.spreadStrength).toBe(0)
+  })
+
   test('an undefined appearance patch member preserves its current value', () => {
     const initial = createInitialState()
 
@@ -256,6 +266,8 @@ describe('wordSearchReducer', () => {
           height: 6,
           cardinalDirections: ['left', 'right'],
           diagonalDirections: ['up-left', 'down-right'],
+          crossingPreference: 75,
+          spreadStrength: 25,
         },
         appearance: {
           highlightColor: '#abcdef',

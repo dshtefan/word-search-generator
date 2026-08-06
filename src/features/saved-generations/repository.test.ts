@@ -31,6 +31,8 @@ const saved: SavedGeneration = {
       height: 2,
       cardinalDirections: ['right'],
       diagonalDirections: ['down-right'],
+      crossingPreference: 50,
+      spreadStrength: 50,
     },
     appearance: {
       highlightColor: '#123456',
@@ -108,7 +110,12 @@ function withTwoPlacedWords(): SavedGeneration {
 describe('createSavedGenerationsRepository', () => {
   test('loads a complete version-1 envelope', () => {
     const storage = new MemoryStorage()
-    storage.values.set('saved-key', versionOne([saved]))
+    const legacy = structuredClone(saved) as unknown as {
+      settings: { generation: Record<string, unknown> }
+    }
+    delete legacy.settings.generation.crossingPreference
+    delete legacy.settings.generation.spreadStrength
+    storage.values.set('saved-key', versionOne([legacy]))
 
     const repository = createSavedGenerationsRepository(storage, 'saved-key')
 
@@ -197,7 +204,7 @@ describe('createSavedGenerationsRepository', () => {
 
   test.each([
     ['invalid JSON', '{'],
-    ['unsupported version', JSON.stringify({ version: 2, data: [saved] })],
+    ['unsupported version', JSON.stringify({ version: 3, data: [saved] })],
     ['missing envelope data', JSON.stringify({ version: 1 })],
   ])('returns an empty list for %s', (_label, raw) => {
     const storage = new MemoryStorage()
@@ -228,6 +235,10 @@ describe('createSavedGenerationsRepository', () => {
     ['non-positive generation dimensions', (item: Record<string, unknown>) => {
       const settings = item.settings as { generation: Record<string, unknown> }
       settings.generation.width = 0
+    }],
+    ['an invalid generation balance', (item: Record<string, unknown>) => {
+      const settings = item.settings as { generation: Record<string, unknown> }
+      settings.generation.spreadStrength = -1
     }],
     ['non-positive output dimensions', (item: Record<string, unknown>) => {
       const settings = item.settings as { output: { resolution: Record<string, unknown> } }
@@ -297,13 +308,13 @@ describe('createSavedGenerationsRepository', () => {
     expect(createSavedGenerationsRepository(storage, 'saved-key').load()).toEqual([])
   })
 
-  test('saves the complete list in a version-1 envelope', () => {
+  test('saves the complete list in a version-2 envelope', () => {
     const storage = new MemoryStorage()
     const repository = createSavedGenerationsRepository(storage, 'saved-key')
 
     expect(repository.save([saved])).toBe(true)
     expect(JSON.parse(storage.values.get('saved-key') ?? '')).toEqual({
-      version: 1,
+      version: 2,
       data: [saved],
     })
   })

@@ -108,6 +108,8 @@ function prepareSmallGeneration(context: WordSearchContextValue): void {
     height: 1,
     cardinalDirections: ['right'],
     diagonalDirections: [],
+    crossingPreference: 50,
+    spreadStrength: 50,
   })
 }
 
@@ -212,7 +214,7 @@ describe('WordSearchProvider commands', () => {
       result: harness.latest().state.current,
     })])
     expect(JSON.parse(harness.storage.values.get('word-search:saved-generations')!))
-      .toEqual({ version: 1, data: harness.latest().state.savedGenerations })
+      .toEqual({ version: 2, data: harness.latest().state.savedGenerations })
   })
 
   test('clamps invalid output updates before saving a repository-valid snapshot', () => {
@@ -269,7 +271,7 @@ describe('WordSearchProvider commands', () => {
       error: null,
     }))
     expect(JSON.parse(harness.storage.values.get('word-search:preferences')!))
-      .toEqual({ version: 1, data: saved.settings })
+      .toEqual({ version: 2, data: saved.settings })
   })
 
   test('removes saved snapshots without changing the current generation', () => {
@@ -284,7 +286,7 @@ describe('WordSearchProvider commands', () => {
     expect(harness.latest().state.savedGenerations).toEqual([])
     expect(harness.latest().state.current).toBe(current)
     expect(JSON.parse(harness.storage.values.get('word-search:saved-generations')!))
-      .toEqual({ version: 1, data: [] })
+      .toEqual({ version: 2, data: [] })
   })
 
   test('resets preferences atomically without deleting saved generations', () => {
@@ -315,7 +317,7 @@ describe('WordSearchProvider commands', () => {
 
     expect(harness.latest().state.settings.appearance.highlightColor).toBe('#fedcba')
     expect(JSON.parse(harness.storage.values.get('word-search:preferences')!))
-      .toEqual({ version: 1, data: harness.latest().state.settings })
+      .toEqual({ version: 2, data: harness.latest().state.settings })
   })
 
   test('initializes repositories once, persists changes, and memoizes context', () => {
@@ -340,6 +342,6 @@ describe('WordSearchProvider commands', () => {
       ({ key }) => key === 'word-search:preferences',
     )).toHaveLength(initialPreferenceWrites + 1)
     expect(JSON.parse(storage.values.get('word-search:preferences')!))
-      .toEqual({ version: 1, data: harness.latest().state.settings })
+      .toEqual({ version: 2, data: harness.latest().state.settings })
   })
 })

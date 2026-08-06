@@ -38,11 +38,18 @@ puzzle. `generate` dispatches `generation/started`, invokes
 `runGeneration(settings.generation, { random })`, and dispatches either
 `generation/succeeded` or `generation/failed`. The generator calls the domain
 `generateWordSearch` with normalized input, selected cardinal and diagonal
-directions, and an injectable `RandomSource`.
+directions, generation-balance weights, and an injectable `RandomSource`.
+Candidate placement uses soft scoring: `crossingPreference` rewards compatible
+partial overlaps, while `spreadStrength` penalizes occupied neighboring cells.
+Both values are percentages, so neither setting makes an otherwise valid
+placement illegal. Only overlaps formed by non-collinear directions receive a
+crossing reward; same-line overlaps receive a strong readability penalty and
+remain available solely as a placement fallback.
 
 `WordSearchState` groups:
 
-- `settings.generation`: words, language, dimensions, and direction lists.
+- `settings.generation`: words, language, dimensions, direction lists, crossing
+  preference, and spread strength.
 - `settings.appearance`: highlight, fonts, and grid style.
 - `settings.output`: natural, resolution, or aspect-ratio dimensions.
 - `current`, `status`, `error`, and `savedGenerations`.
@@ -61,10 +68,12 @@ snapshots use `word-search:saved-generations`. Both store this versioned
 envelope:
 
 ```json
-{ "version": 1, "data": "validated payload" }
+{ "version": 2, "data": "validated payload" }
 ```
 
-Repositories strictly validate the complete shape. Missing, malformed,
+Repositories migrate valid version-1 payloads by adding neutral 50/50
+generation-balance defaults, then strictly validate the complete version-2
+shape. Missing, malformed,
 unsupported-version, or inaccessible storage recovers to fresh defaults for
 preferences and an empty list for saved generations. A saved generation holds
 an id, name, timestamp, settings, and `WordSearchResult`; snapshots are cloned

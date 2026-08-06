@@ -52,8 +52,9 @@ npm run build
   randomness, time, IDs, storage, and export ports in tests for determinism.
 - Preserve existing visible controls, labels, order, tabs, and SVG/PNG/PDF
   export formats unless a task explicitly authorizes a UI change.
-- Persisted preferences and saved generations use strict `{ version: 1, data }`
-  envelopes. Keep validation and safe fallback behavior; introduce an explicit
-  migration before changing a stored shape or version.
+- Persisted preferences and saved generations use strict `{ version: 2, data }`
+  envelopes, with an explicit version-1-to-version-2 migration for generation
+  balance defaults. Keep validation and safe fallback behavior; introduce an
+  explicit migration before changing a stored shape or version again.
 - Do not add dependencies unless the task requires them. Prefer existing
   domain contracts, feature ports, and UI primitives.
