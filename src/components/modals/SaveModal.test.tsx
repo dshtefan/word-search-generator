@@ -1,12 +1,14 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
+import { Sidebar } from '@/components/sidebar/Sidebar'
 import type { SavedGeneration } from '@/features/saved-generations/types'
 import type { ExportResult } from '@/features/export/types'
 import {
   WordSearchProvider,
   createWordSearchRuntime,
 } from '@/store/WordSearchProvider'
+import { renderWordSearch } from '@/test/render-app'
 import { SaveModal } from './SaveModal'
 
 jest.mock('jspdf', () => ({ jsPDF: jest.fn() }))
@@ -70,8 +72,12 @@ const saved: SavedGeneration = {
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((done) => { resolve = done })
-  return { promise, resolve }
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done
+    reject = fail
+  })
+  return { promise, reject, resolve }
 }
 
 function SavedModalController() {
@@ -91,6 +97,28 @@ function SavedModalController() {
 
 describe('SaveModal', () => {
   beforeEach(() => window.localStorage.clear())
+
+  test('keeps the dialog open and restores Save after an export rejection', async () => {
+    const pending = createDeferred<ExportResult>()
+    const exportService = {
+      exportCurrent: jest.fn(() => pending.promise),
+      exportSaved: jest.fn(),
+    }
+    const { user } = renderWordSearch(<Sidebar />, { exportService })
+    await user.click(screen.getByRole('button', { name: 'Generate' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    const dialog = screen.getByRole('dialog', { name: 'Save Word Search' })
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    await act(async () => pending.reject(new Error('Export service unavailable')))
+
+    expect(dialog).toBeVisible()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Export service unavailable',
+    )
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled()
+  })
 
   test('keeps export failures visible, resets loading, and clears errors on retry', async () => {
     const user = userEvent.setup()

@@ -98,6 +98,7 @@ export function SavedPanel() {
                     className="flex items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50"
                   >
                     <Checkbox
+                      aria-label={`Select ${saved.name}`}
                       checked={selectedIds.has(saved.id)}
                       onCheckedChange={() => toggleId(saved.id)}
                     />
@@ -114,6 +115,7 @@ export function SavedPanel() {
                       size="sm"
                       className="h-7 px-1.5 text-muted-foreground hover:text-foreground"
                       title="Apply"
+                      aria-label={`Apply ${saved.name}`}
                       onClick={() => {
                         applySaved(saved.id)
                         setOpen(false)
@@ -126,6 +128,7 @@ export function SavedPanel() {
                       size="sm"
                       className="h-7 px-1.5 text-muted-foreground hover:text-destructive"
                       title="Delete"
+                      aria-label={`Delete ${saved.name}`}
                       onClick={() => deleteSaved(saved.id)}
                     >
                       &times;

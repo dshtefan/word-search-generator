@@ -20,7 +20,9 @@ export function ActionsSection() {
             {state.status === 'generating' ? 'Generating...' : 'Generate'}
           </Button>
           {state.error && (
-            <p className="text-sm text-destructive">{state.error}</p>
+            <p role="alert" className="text-sm text-destructive">
+              {state.error}
+            </p>
           )}
           {isGenerated && state.settings.generation.words.length > 0 && (
             <div className="flex flex-wrap gap-1">

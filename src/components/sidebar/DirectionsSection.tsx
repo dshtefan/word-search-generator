@@ -31,6 +31,7 @@ export function DirectionsSection() {
         <div className="flex flex-col gap-1.5">
           <Label>Cardinal</Label>
           <MultiSelect
+            ariaLabel="Cardinal directions"
             options={CARDINAL_OPTIONS}
             selected={generation.cardinalDirections}
             onChange={(selected) => updateGeneration({
@@ -42,6 +43,7 @@ export function DirectionsSection() {
         <div className="flex flex-col gap-1.5">
           <Label>Diagonal</Label>
           <MultiSelect
+            ariaLabel="Diagonal directions"
             options={DIAGONAL_OPTIONS}
             selected={generation.diagonalDirections}
             onChange={(selected) => updateGeneration({

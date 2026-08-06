@@ -87,6 +87,12 @@ export function SaveModal({
         return
       }
       handleOpenChange(false)
+    } catch (cause: unknown) {
+      if (attempt === activeAttempt.current) {
+        setError(cause instanceof Error
+          ? cause.message
+          : 'Unable to export word search')
+      }
     } finally {
       if (attempt === activeAttempt.current) setIsExporting(false)
     }

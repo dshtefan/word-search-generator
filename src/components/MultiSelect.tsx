@@ -14,6 +14,7 @@ interface MultiSelectProps {
   selected: string[]
   onChange: (selected: string[]) => void
   placeholder?: string
+  ariaLabel?: string
 }
 
 function MultiSelect({
@@ -21,6 +22,7 @@ function MultiSelect({
   selected,
   onChange,
   placeholder = "Select...",
+  ariaLabel,
 }: MultiSelectProps) {
   const triggerLabel =
     selected.length > 0
@@ -42,6 +44,7 @@ function MultiSelect({
           <Button
             variant="outline"
             className="w-full justify-between font-normal"
+            aria-label={ariaLabel}
           />
         }
       >
