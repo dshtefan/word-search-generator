@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 const RESOLUTION_PRESETS = [
   { label: '800 × 600', width: 800, height: 600 },

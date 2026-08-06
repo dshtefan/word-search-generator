@@ -9,7 +9,7 @@ import {
   createWordSearchRuntime,
   useWordSearch,
   type WordSearchContextValue,
-} from './WordSearchProvider'
+} from '@/store'
 
 jest.mock('jspdf', () => ({ jsPDF: jest.fn() }))
 

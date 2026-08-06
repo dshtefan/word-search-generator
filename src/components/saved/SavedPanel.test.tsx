@@ -9,7 +9,7 @@ import {
   createWordSearchRuntime,
   useWordSearch,
   type WordSearchContextValue,
-} from '@/store/WordSearchProvider'
+} from '@/store'
 import { renderWordSearch } from '@/test/render-app'
 import { SavedPanel } from './SavedPanel'
 

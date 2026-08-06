@@ -6,7 +6,7 @@ import {
   WordSearchProvider,
   createWordSearchRuntime,
   type WordSearchProviderDependencies,
-} from '@/store/WordSearchProvider'
+} from '@/store'
 
 if (globalThis.PointerEvent === undefined) {
   Object.defineProperty(globalThis, 'PointerEvent', {

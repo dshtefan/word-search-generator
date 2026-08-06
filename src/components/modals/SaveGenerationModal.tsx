@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 interface SaveGenerationModalProps {
   open: boolean

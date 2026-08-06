@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 /** Lists saved snapshots and offers apply, remove, selection, and export intents. */
 export function SavedPanel() {

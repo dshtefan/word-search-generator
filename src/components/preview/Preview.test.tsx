@@ -3,7 +3,7 @@ import type { StorageAdapter } from '@/features/saved-generations/repository'
 import {
   WordSearchProvider,
   createWordSearchRuntime,
-} from '@/store/WordSearchProvider'
+} from '@/store'
 import { Preview } from './Preview'
 
 jest.mock('jspdf', () => ({ jsPDF: jest.fn() }))

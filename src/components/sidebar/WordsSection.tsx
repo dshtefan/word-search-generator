@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { Language } from '@/domain/word-search'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 const LANGUAGE_OPTIONS: Array<{ value: Language; label: string }> = [
   { value: 'en', label: 'English' },

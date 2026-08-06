@@ -1,7 +1,7 @@
 import { GridSizeInputs } from '@/components/GridSizeInputs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ColorPicker } from '@/components/ui/color-picker'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 /** Renders grid dimensions followed by the highlight-color card. */
 export function GridSection() {

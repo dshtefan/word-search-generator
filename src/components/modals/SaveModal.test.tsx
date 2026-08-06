@@ -7,7 +7,7 @@ import type { ExportResult } from '@/features/export/types'
 import {
   WordSearchProvider,
   createWordSearchRuntime,
-} from '@/store/WordSearchProvider'
+} from '@/store'
 import { renderWordSearch } from '@/test/render-app'
 import { SaveModal } from './SaveModal'
 

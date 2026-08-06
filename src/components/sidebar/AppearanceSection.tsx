@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select'
 import type { GridStyle } from '@/domain/word-search'
 import { useCustomFont } from '@/shared/useCustomFont'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 const FONT_OPTIONS = [
   'Inter',

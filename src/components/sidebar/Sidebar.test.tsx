@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
-import { WordSearchProvider } from '@/store/WordSearchProvider'
+import { WordSearchProvider } from '@/store'
 import { Preview } from '@/components/preview/Preview'
 import { renderWordSearch } from '@/test/render-app'
 import { Sidebar } from './Sidebar'

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select'
 import type { ExportFormat } from '@/features/export/types'
 import type { SavedGeneration } from '@/features/saved-generations/types'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 interface SaveModalProps {
   open: boolean

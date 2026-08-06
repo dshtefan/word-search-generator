@@ -2,7 +2,7 @@ import { PreviewToolbar } from '@/components/PreviewToolbar'
 import { Preview } from '@/components/preview/Preview'
 import { SavedPanel } from '@/components/saved/SavedPanel'
 import { Sidebar } from '@/components/sidebar/Sidebar'
-import { WordSearchProvider } from '@/store/WordSearchProvider'
+import { WordSearchProvider } from '@/store'
 
 /** Composes the word-search editor using the intent-level React facade. */
 export function App() {

@@ -3,7 +3,7 @@ import { SaveGenerationModal } from '@/components/modals/SaveGenerationModal'
 import { SaveModal } from '@/components/modals/SaveModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 /** Renders generation, snapshot, export, and reset actions. */
 export function ActionsSection() {

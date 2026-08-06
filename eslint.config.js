@@ -25,4 +25,79 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['src/domain/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                'react',
+                'react/*',
+                'react/**',
+                '@/store',
+                '@/store/*',
+                '@/store/**',
+                '**/store',
+                '**/store/**',
+                '@/features',
+                '@/features/*',
+                '@/features/**',
+                '**/features',
+                '**/features/**',
+                'jspdf',
+                'jspdf/*',
+                'jspdf/**',
+                'jszip',
+                'jszip/*',
+                'jszip/**',
+              ],
+              message: 'Domain modules must remain independent of UI, store, feature, and export infrastructure.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/features/export/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'getComputedStyle',
+          message: 'Export documents must be built from typed data, not scraped DOM styles.',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.property.name='getElementById']",
+          message: 'Export documents must be built from typed data, not scraped DOM elements.',
+        },
+        {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.property.name='querySelector']",
+          message: 'Export documents must be built from typed data, not scraped DOM elements.',
+        },
+        {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.property.name='getComputedStyle']",
+          message: 'Export documents must be built from typed data, not scraped DOM styles.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': [
+        'warn',
+        {
+          allowConstantExport: true,
+          allowExportNames: ['buttonVariants', 'tabsListVariants'],
+        },
+      ],
+    },
+  },
 )

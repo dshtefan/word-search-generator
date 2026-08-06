@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { parseFontStyle } from '@/shared/font-style'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 import { WordSearchGrid } from './WordSearchGrid'
 import { getGridDimensions } from './grid-dimensions'
 

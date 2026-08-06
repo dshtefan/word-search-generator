@@ -2,7 +2,7 @@ import { MultiSelect } from '@/components/MultiSelect'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import type { Direction } from '@/domain/word-search'
-import { useWordSearch } from '@/store/WordSearchProvider'
+import { useWordSearch } from '@/store'
 
 const CARDINAL_OPTIONS = [
   { value: 'up', label: '↑ Up' },
