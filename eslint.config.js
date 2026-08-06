@@ -78,11 +78,23 @@ export default tseslint.config(
           message: 'Export documents must be built from typed data, not scraped DOM elements.',
         },
         {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.computed=true][callee.property.value='getElementById']",
+          message: 'Export documents must be built from typed data, not scraped DOM elements.',
+        },
+        {
           selector: "CallExpression[callee.type='MemberExpression'][callee.property.name='querySelector']",
           message: 'Export documents must be built from typed data, not scraped DOM elements.',
         },
         {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.computed=true][callee.property.value='querySelector']",
+          message: 'Export documents must be built from typed data, not scraped DOM elements.',
+        },
+        {
           selector: "CallExpression[callee.type='MemberExpression'][callee.property.name='getComputedStyle']",
+          message: 'Export documents must be built from typed data, not scraped DOM styles.',
+        },
+        {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.computed=true][callee.property.value='getComputedStyle']",
           message: 'Export documents must be built from typed data, not scraped DOM styles.',
         },
       ],
