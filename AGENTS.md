@@ -13,9 +13,9 @@
   `useWordSearch` intent facade.
 - `src/components`: UI sections and primitives; `src/app/App.tsx` composes the
   application. `src/shared` holds cross-cutting helpers, `src/lib/utils.ts`
-  holds general UI utilities, `src/main.tsx` mounts the app, `src/index.css`
-  supplies global styles, and `src/test` holds test setup and provider-aware
-  render helpers.
+  holds general UI utilities, `src/main.tsx` mounts `<App />` in `StrictMode`,
+  `src/index.css` supplies global styles, and `src/test` holds test setup and
+  provider-aware render helpers.
 
 ## Dependency rules
 

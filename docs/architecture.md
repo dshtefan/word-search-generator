@@ -2,6 +2,9 @@
 
 ## Source map and dependency rules
 
+The table lists internal project imports. Package imports such as `react` and
+`react-dom/client` are intentionally outside this project-layer direction map.
+
 | Directory | Responsibility | May depend on |
 | --- | --- | --- |
 | `src/domain/word-search` | Pure types, normalization, validation, placement, and generation. Its public API is `index.ts`. | Other files in this domain only. |
