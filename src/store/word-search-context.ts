@@ -1,5 +1,9 @@
 import { createContext, useContext } from 'react'
-import type { WordSearchSettings, WordSearchState } from './types'
+import type {
+  OutputSettingsPatch,
+  WordSearchSettings,
+  WordSearchState,
+} from './types'
 import type { WordSearchRuntime } from './word-search-runtime'
 
 /** User intents exposed to React components by the word-search facade. */
@@ -9,7 +13,7 @@ export interface WordSearchCommands {
   /** Changes rendering preferences without regenerating the puzzle. */
   updateAppearance(patch: Partial<WordSearchSettings['appearance']>): void
   /** Changes mutually exclusive output sizing preferences. */
-  updateOutput(patch: Partial<WordSearchSettings['output']>): void
+  updateOutput(patch: OutputSettingsPatch): void
   /** Generates a complete puzzle from the latest generation settings. */
   generate(): void
   /** Persists the current puzzle and all settings under a name. */

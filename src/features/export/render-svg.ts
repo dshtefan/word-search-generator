@@ -1,4 +1,5 @@
 import type { ExportDocument, ExportFont } from './types'
+import { assertPositiveDimensions } from './geometry'
 
 function escapeXml(value: string): string {
   return value
@@ -86,6 +87,7 @@ function renderBorders(document: ExportDocument): string[] {
 
 /** Serializes an export document as SVG without accessing browser rendering state. */
 export function renderSvg(document: ExportDocument): string {
+  assertPositiveDimensions(document)
   const fontAttributes = [
     `font-family="${escapeXml(document.font.family)}"`,
     `font-size="${document.font.size}"`,

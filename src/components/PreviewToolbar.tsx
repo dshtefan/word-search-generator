@@ -54,7 +54,7 @@ export function PreviewToolbar() {
             onChange={(event) => updateOutput({
               resolution: {
                 ...output.resolution,
-                width: Number(event.target.value) || 1,
+                width: Number(event.target.value),
               },
             })}
             className="h-7 w-16 px-1.5 text-xs"
@@ -67,7 +67,7 @@ export function PreviewToolbar() {
             onChange={(event) => updateOutput({
               resolution: {
                 ...output.resolution,
-                height: Number(event.target.value) || 1,
+                height: Number(event.target.value),
               },
             })}
             className="h-7 w-16 px-1.5 text-xs"
@@ -115,7 +115,7 @@ export function PreviewToolbar() {
             onChange={(event) => updateOutput({
               aspectRatio: {
                 ...output.aspectRatio,
-                width: Number(event.target.value) || 1,
+                width: Number(event.target.value),
               },
             })}
             className="h-7 w-14 px-1.5 text-xs"
@@ -128,7 +128,7 @@ export function PreviewToolbar() {
             onChange={(event) => updateOutput({
               aspectRatio: {
                 ...output.aspectRatio,
-                height: Number(event.target.value) || 1,
+                height: Number(event.target.value),
               },
             })}
             className="h-7 w-14 px-1.5 text-xs"

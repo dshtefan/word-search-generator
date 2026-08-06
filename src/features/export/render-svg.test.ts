@@ -19,6 +19,16 @@ const fullDocument: ExportDocument = {
 }
 
 describe('renderSvg', () => {
+  test.each([
+    ['negative width', { width: -1 }],
+    ['zero height', { height: 0 }],
+    ['NaN width', { width: Number.NaN }],
+    ['infinite height', { height: Number.POSITIVE_INFINITY }],
+  ])('rejects a %s before serializing SVG', (_label, dimensions) => {
+    expect(() => renderSvg({ ...fullDocument, ...dimensions }))
+      .toThrow('Export dimensions must be positive finite numbers')
+  })
+
   test('serializes dimensions, escaped text, positions, and every full-grid border', () => {
     expect(renderSvg(fullDocument)).toBe([
       '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20" font-family="A &amp; &lt;B&gt; &quot;C&quot;" font-size="12">',

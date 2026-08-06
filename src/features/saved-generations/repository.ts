@@ -237,8 +237,23 @@ function isWordSearchResult(
     return false
   }
 
-  return placements.every((placement) =>
-    isPlacement(placement, settings, puzzle, solution))
+  const expectedWordIndices = new Set(
+    settings.generation.words.flatMap((word, wordIndex) =>
+      word.trim().length === 0 ? [] : [wordIndex]),
+  )
+  if (placements.length !== expectedWordIndices.size) return false
+
+  const placedWordIndices = new Set<number>()
+  return placements.every((placement) => {
+    if (!isPlacement(placement, settings, puzzle, solution)
+      || !expectedWordIndices.has(placement.wordIndex)
+      || placedWordIndices.has(placement.wordIndex)
+    ) {
+      return false
+    }
+    placedWordIndices.add(placement.wordIndex)
+    return true
+  })
 }
 
 function isSavedGeneration(value: unknown): value is SavedGeneration {

@@ -166,6 +166,35 @@ describe('createExportService', () => {
     expect(harness.exportPdf).toHaveBeenCalledTimes(format === 'pdf' ? 1 : 0)
   })
 
+  test.each(['svg', 'png', 'pdf'] as const)(
+    'rejects invalid geometry before emitting a %s artifact',
+    async (format) => {
+      const source = createSnapshot()
+      source.settings.output.resolution.width = -200
+      const harness = createServiceHarness()
+
+      const result = await harness.service.exportCurrent({
+        source,
+        format,
+        filename: 'invalid',
+        includeAnswers: false,
+        includePuzzle: true,
+      })
+
+      expect(result).toMatchObject({
+        ok: false,
+        message: 'Failed to export current generation',
+        cause: expect.objectContaining({
+          message: 'Export dimensions must be positive finite numbers',
+        }),
+      })
+      expect(harness.renderDocument).not.toHaveBeenCalled()
+      expect(harness.exportPng).not.toHaveBeenCalled()
+      expect(harness.exportPdf).not.toHaveBeenCalled()
+      expect(harness.downloads).toEqual([])
+    },
+  )
+
   test('downloads both variants directly for one saved generation', async () => {
     const harness = createServiceHarness()
 

@@ -103,6 +103,24 @@ describe('wordSearchReducer', () => {
     )
   })
 
+  test.each([
+    ['a negative number', -1],
+    ['zero', 0],
+    ['NaN', Number.NaN],
+    ['positive infinity', Number.POSITIVE_INFINITY],
+  ])('clamps %s at the output-settings boundary', (_label, invalidDimension) => {
+    const nextState = wordSearchReducer(createInitialState(), {
+      type: 'output/changed',
+      payload: {
+        resolution: { width: invalidDimension },
+        aspectRatio: { height: invalidDimension },
+      },
+    })
+
+    expect(nextState.settings.output.resolution.width).toBe(1)
+    expect(nextState.settings.output.aspectRatio.height).toBe(1)
+  })
+
   test('an undefined generation patch member preserves its current value', () => {
     const initial = createInitialState()
 

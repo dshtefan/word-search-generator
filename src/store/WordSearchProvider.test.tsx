@@ -2,7 +2,10 @@ import { act, render } from '@testing-library/react'
 import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
 import { createInitialState } from './initial-state'
-import type { StorageAdapter } from '@/features/saved-generations/repository'
+import {
+  createSavedGenerationsRepository,
+  type StorageAdapter,
+} from '@/features/saved-generations/repository'
 import type { ExportResult } from '@/features/export/types'
 import {
   WordSearchProvider,
@@ -210,6 +213,27 @@ describe('WordSearchProvider commands', () => {
     })])
     expect(JSON.parse(harness.storage.values.get('word-search:saved-generations')!))
       .toEqual({ version: 1, data: harness.latest().state.savedGenerations })
+  })
+
+  test('clamps invalid output updates before saving a repository-valid snapshot', () => {
+    const harness = renderProvider()
+    act(() => prepareSmallGeneration(harness.latest()))
+    act(() => harness.latest().generate())
+    act(() => harness.latest().updateOutput({
+      mode: 'resolution',
+      resolution: { width: -800, height: 0 },
+      aspectRatio: { width: Number.NaN, height: 9 },
+    }))
+
+    act(() => harness.latest().saveGeneration('Safe output'))
+
+    expect(harness.latest().state.settings.output).toEqual({
+      mode: 'resolution',
+      resolution: { width: 1, height: 1 },
+      aspectRatio: { width: 1, height: 9 },
+    })
+    expect(createSavedGenerationsRepository(harness.storage).load())
+      .toEqual(harness.latest().state.savedGenerations)
   })
 
   test('assigns sequential default names to unnamed generations', () => {

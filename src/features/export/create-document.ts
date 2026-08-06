@@ -1,7 +1,9 @@
 import { getPlacementEnd } from '@/domain/word-search'
 import { parseFontStyle } from '@/shared/font-style'
+import { assertPositiveDimensions } from './geometry'
 import type {
   CreateExportDocumentOptions,
+  ExportCell,
   ExportDocument,
   ExportDocumentSource,
   ExportFont,
@@ -22,11 +24,15 @@ function getDimensions(
   const naturalHeight = rows * naturalCellSize
   const output = source.settings.output
 
-  if (output.mode === 'resolution') return output.resolution
+  if (output.mode === 'resolution') {
+    assertPositiveDimensions(output.resolution)
+    return output.resolution
+  }
   if (output.mode === 'natural') {
     return { width: naturalWidth, height: naturalHeight }
   }
 
+  assertPositiveDimensions(output.aspectRatio)
   const targetRatio = output.aspectRatio.width / output.aspectRatio.height
   const naturalRatio = naturalWidth / naturalHeight
   return naturalRatio > targetRatio
@@ -66,17 +72,19 @@ export function createExportDocument(
   const rows = grid.length
   const columns = grid[0].length
   const { width, height } = getDimensions(source, columns, rows)
+  assertPositiveDimensions({ width, height })
   const cellWidth = width / columns
   const cellHeight = height / rows
-  const cells = grid.flatMap((row, rowIndex) =>
-    row.map((cell, columnIndex) => ({
+  const cells = grid.reduce<ExportCell[]>((allCells, row, rowIndex) => {
+    allCells.push(...row.map((cell, columnIndex) => ({
       letter: cell.letter,
       x: columnIndex * cellWidth,
       y: rowIndex * cellHeight,
       width: cellWidth,
       height: cellHeight,
-    })),
-  )
+    })))
+    return allCells
+  }, [])
   const paths = options.answers
     ? source.result.placements.map((placement) => {
         const end = getPlacementEnd(

@@ -169,6 +169,28 @@ describe('createExportDocument', () => {
     ])
   })
 
+  test.each([
+    ['a negative resolution', 'resolution', { width: -1, height: 90 }],
+    ['a zero aspect-ratio member', 'aspect-ratio', { width: 0, height: 1 }],
+    ['negative aspect-ratio members', 'aspect-ratio', { width: -2, height: -1 }],
+    ['a NaN resolution', 'resolution', { width: Number.NaN, height: 90 }],
+  ] as const)('rejects %s before creating export geometry', (
+    _label,
+    mode,
+    dimensions,
+  ) => {
+    const invalidSnapshot = structuredClone(snapshot)
+    invalidSnapshot.settings.output.mode = mode
+    if (mode === 'resolution') {
+      invalidSnapshot.settings.output.resolution = dimensions
+    } else {
+      invalidSnapshot.settings.output.aspectRatio = dimensions
+    }
+
+    expect(() => createExportDocument(invalidSnapshot, { answers: false }))
+      .toThrow('Export dimensions must be positive finite numbers')
+  })
+
   test('uses the solution and keeps crossing placements as separate answer paths', () => {
     const document = createExportDocument(snapshot, { answers: true })
 
@@ -227,7 +249,8 @@ describe('createExportDocument', () => {
       localFamily: 'Local Family',
       localFullName: 'Local Family Semi Bold Italic',
     })
-    expect(Object.values(document).some((value) => typeof value === 'function'))
+    expect(Object.keys(document).some((key) =>
+      typeof document[key as keyof typeof document] === 'function'))
       .toBe(false)
   })
 

@@ -10,6 +10,7 @@ export type Direction =
 
 export type Language = 'en' | 'ru' | 'de'
 
+/** Draws every cell (`full`), only the perimeter (`outer`), or no borders (`none`). */
 export type GridStyle = 'full' | 'outer' | 'none'
 
 export interface Point {

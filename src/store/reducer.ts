@@ -6,6 +6,7 @@ import {
 import type {
   AppearanceSettings,
   AppearanceSettingsPatch,
+  Dimensions,
   GenerationSettings,
   OutputSettings,
   OutputSettingsPatch,
@@ -62,10 +63,25 @@ function patchOutput(
     ...definedPatch(patch),
     resolution: patch.resolution === undefined
       ? settings.resolution
-      : { ...settings.resolution, ...definedPatch(patch.resolution) },
+      : patchDimensions(settings.resolution, patch.resolution),
     aspectRatio: patch.aspectRatio === undefined
       ? settings.aspectRatio
-      : { ...settings.aspectRatio, ...definedPatch(patch.aspectRatio) },
+      : patchDimensions(settings.aspectRatio, patch.aspectRatio),
+  }
+}
+
+function patchDimensions(
+  dimensions: Dimensions,
+  patch: Partial<Dimensions>,
+): Dimensions {
+  const clamp = (value: number | undefined, current: number) => {
+    if (value === undefined) return current
+    return Number.isFinite(value) && value > 0 ? value : 1
+  }
+
+  return {
+    width: clamp(patch.width, dimensions.width),
+    height: clamp(patch.height, dimensions.height),
   }
 }
 

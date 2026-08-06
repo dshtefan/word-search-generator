@@ -74,6 +74,37 @@ function versionOne(data: unknown): string {
   return JSON.stringify({ version: 1, data })
 }
 
+function withTwoPlacedWords(): SavedGeneration {
+  const item = structuredClone(saved)
+  return {
+    ...item,
+    settings: {
+      ...item.settings,
+      generation: {
+        ...item.settings.generation,
+        words: ['CAT', 'Z'],
+      },
+    },
+    result: {
+      ...item.result,
+      solution: item.result.solution.map((row, rowIndex) =>
+        row.map((cell, columnIndex) => rowIndex === 1 && columnIndex === 2
+          ? { letter: 'Z' }
+          : cell)),
+      placements: [
+        ...item.result.placements,
+        {
+          x: 2,
+          y: 1,
+          wordIndex: 1,
+          direction: 'right',
+          word: 'Z',
+        },
+      ],
+    },
+  }
+}
+
 describe('createSavedGenerationsRepository', () => {
   test('loads a complete version-1 envelope', () => {
     const storage = new MemoryStorage()
@@ -82,6 +113,86 @@ describe('createSavedGenerationsRepository', () => {
     const repository = createSavedGenerationsRepository(storage, 'saved-key')
 
     expect(repository.load()).toEqual([saved])
+  })
+
+  test('loads one placement for every nonblank original word index', () => {
+    const item: SavedGeneration = {
+      ...structuredClone(saved),
+      settings: {
+        ...saved.settings,
+        generation: {
+          ...saved.settings.generation,
+          words: [' ', 'CAT', ''],
+        },
+      },
+      result: {
+        ...saved.result,
+        placements: [{ ...saved.result.placements[0], wordIndex: 1 }],
+      },
+    }
+    const storage = new MemoryStorage()
+    storage.values.set('saved-key', versionOne([item]))
+
+    expect(createSavedGenerationsRepository(storage, 'saved-key').load())
+      .toEqual([item])
+  })
+
+  test.each([
+    ['an empty placement list', () => {
+      const item = structuredClone(saved)
+      return { ...item, result: { ...item.result, placements: [] } }
+    }],
+    ['a missing placement', () => {
+      const item = withTwoPlacedWords()
+      return {
+        ...item,
+        result: { ...item.result, placements: item.result.placements.slice(0, 1) },
+      }
+    }],
+    ['a duplicate word index', () => {
+      const item = structuredClone(saved)
+      return {
+        ...item,
+        result: {
+          ...item.result,
+          placements: [
+            ...item.result.placements,
+            { ...item.result.placements[0] },
+          ],
+        },
+      }
+    }],
+    ['an extra placement for a blank original word', () => {
+      const item = structuredClone(saved)
+      return {
+        ...item,
+        settings: {
+          ...item.settings,
+          generation: {
+            ...item.settings.generation,
+            words: ['CAT', ' '],
+          },
+        },
+        result: {
+          ...item.result,
+          placements: [
+            ...item.result.placements,
+            {
+              x: 2,
+              y: 1,
+              wordIndex: 1,
+              direction: 'right',
+              word: 'Z',
+            },
+          ],
+        },
+      }
+    }],
+  ])('rejects the complete payload containing %s', (_label, createItem) => {
+    const storage = new MemoryStorage()
+    storage.values.set('saved-key', versionOne([createItem()]))
+
+    expect(createSavedGenerationsRepository(storage, 'saved-key').load()).toEqual([])
   })
 
   test.each([
