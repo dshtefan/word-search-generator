@@ -188,6 +188,29 @@ test('prefers an uncrowded placement over an overlapping placement', () => {
   expect(second).toMatchObject({ x: 3, y: 0, direction: 'right' })
 })
 
+test('allows a clean crossing while uncrowded placements remain available', () => {
+  const result = generateWordSearch({
+    words: ['abc', 'bxy'],
+    directions: ['right', 'down'],
+    width: 5,
+    height: 5,
+    language: 'en',
+  }, { random: zeroRandom })
+  const occupiedCoordinates = result.placements.map((placement) =>
+    new Set(getPlacementCells(
+      placement,
+      placement.direction,
+      Array.from(placement.word).length,
+    ).map(({ x, y }) => `${x},${y}`)),
+  )
+  const sharedCoordinates = [...occupiedCoordinates[0]]
+    .filter((coordinate) => occupiedCoordinates[1].has(coordinate))
+
+  expect(sharedCoordinates).toHaveLength(1)
+  expect(new Set(occupiedCoordinates.flatMap((coordinates) => [...coordinates])).size)
+    .toBeLessThan(6)
+})
+
 test('restores cells while backtracking from an incompatible early placement', () => {
   const result = generateWordSearch({
     words: ['ab', 'ac', 'bc'],

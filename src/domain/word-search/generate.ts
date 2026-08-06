@@ -13,6 +13,8 @@ import type {
 import { validateGenerationInput } from './validate'
 
 const DEFAULT_MAX_ATTEMPTS = 10_000
+const CROSSING_REWARD = 2
+const COMPLETE_OVERLAP_PENALTY = 1
 
 interface MutableCell {
   letter: string
@@ -34,7 +36,7 @@ interface PlacementCandidate {
   readonly x: number
   readonly y: number
   readonly direction: Direction
-  readonly crowdingScore: number
+  readonly distributionScore: number
   readonly overlapCount: number
 }
 
@@ -85,6 +87,37 @@ function isInBounds(
   return x >= 0 && x < width && y >= 0 && y < height
 }
 
+function getDistributionScore(
+  placementCells: readonly { readonly x: number; readonly y: number }[],
+  grid: readonly (readonly MutableCell[])[],
+  overlapCount: number,
+): number {
+  const placementCoordinates = new Set(
+    placementCells.map(({ x, y }) => `${x},${y}`),
+  )
+  const height = grid.length
+  const width = grid[0].length
+  const neighboringOccupancy = placementCells.reduce((total, cell) => {
+    let occupiedNeighbors = 0
+    for (let y = Math.max(0, cell.y - 1); y <= Math.min(height - 1, cell.y + 1); y += 1) {
+      for (let x = Math.max(0, cell.x - 1); x <= Math.min(width - 1, cell.x + 1); x += 1) {
+        if (grid[y][x].letter !== '' && !placementCoordinates.has(`${x},${y}`)) {
+          occupiedNeighbors += 1
+        }
+      }
+    }
+    return total + occupiedNeighbors
+  }, 0)
+  const neighboringDensity = neighboringOccupancy / placementCells.length
+  const isPartialCrossing = overlapCount > 0 && overlapCount < placementCells.length
+  const crossingReward = isPartialCrossing ? overlapCount * CROSSING_REWARD : 0
+  const completeOverlapPenalty = overlapCount === placementCells.length
+    ? COMPLETE_OVERLAP_PENALTY
+    : 0
+
+  return neighboringDensity - crossingReward + completeOverlapPenalty
+}
+
 function getCandidates(
   word: NormalizedWord,
   grid: readonly (readonly MutableCell[])[],
@@ -121,22 +154,18 @@ function getCandidates(
       }
 
       if (compatible) {
-        const crowdingScore = placementCells.reduce((total, cell) => {
-          let occupiedCells = 0
-          for (let y = Math.max(0, cell.y - 1); y <= Math.min(height - 1, cell.y + 1); y += 1) {
-            for (let x = Math.max(0, cell.x - 1); x <= Math.min(width - 1, cell.x + 1); x += 1) {
-              if (grid[y][x].letter !== '') occupiedCells += 1
-            }
-          }
-          return total + occupiedCells
-        }, 0)
-        candidates.push({ ...start, direction, crowdingScore, overlapCount })
+        const distributionScore = getDistributionScore(
+          placementCells,
+          grid,
+          overlapCount,
+        )
+        candidates.push({ ...start, direction, distributionScore, overlapCount })
       }
     }
   }
 
   return candidates.sort((left, right) =>
-    left.crowdingScore - right.crowdingScore
+    left.distributionScore - right.distributionScore
     || directionUsage[left.direction] - directionUsage[right.direction]
     || right.overlapCount - left.overlapCount,
   )
