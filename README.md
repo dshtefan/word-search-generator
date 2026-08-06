@@ -1,54 +1,53 @@
-# React + TypeScript + Vite
+# Word Search Generator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Create customizable word-search puzzles, save generated snapshots, and export
+puzzles or answer keys as SVG, PNG, or PDF.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Use Node.js `v24.19.0` (the version in [`.nvmrc`](.nvmrc)) and npm.
 
-## Expanding the ESLint configuration
+## Getting started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`npm run dev` starts the Vite development server. Build a production bundle
+with `npm run build`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Commands
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite development server. |
+| `npm run build` | Type-check with TypeScript and build with Vite. |
+| `npm run lint` | Run ESLint across the project. |
+| `npm test` | Run the Jest test suite. |
+| `npm run test:watch` | Run Jest in watch mode. |
+| `npm run test:coverage` | Run Jest with coverage thresholds. |
+| `npm run preview` | Start Vite's local production-bundle preview. |
+
+## Using the generator
+
+1. Enter words, choose one of the supported languages (English, Russian, or
+   German), select directions, and set grid dimensions.
+2. Generate a puzzle. Changing generation inputs clears the current result;
+   appearance and output settings do not regenerate it.
+3. Adjust the grid, font, highlight, and output-size settings as needed.
+4. Save a named generation to retain its settings and puzzle together. The app
+   stores preferences and saved generations in browser storage.
+5. Export the current puzzle or saved generations as SVG, PNG, or PDF. Current
+   exports can include the puzzle, answer key, or both; multiple saved
+   generations are packaged as a ZIP archive.
+
+## Technology
+
+The interface is built with React and TypeScript, bundled by Vite, styled with
+Tailwind CSS, and tested with Jest plus React Testing Library. Export uses SVG
+as the canonical document representation, with browser rasterization for PNG
+and PDF output.
+
+For contributor guidance, see [architecture documentation](docs/architecture.md)
+and [testing documentation](docs/testing.md).

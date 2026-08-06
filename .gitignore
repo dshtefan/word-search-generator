@@ -4,4 +4,3 @@ dist
 .vibe
 .worktrees/
 *.local
-docs
