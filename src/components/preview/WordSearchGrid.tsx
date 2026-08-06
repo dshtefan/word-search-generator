@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { getPlacementEnd } from '@/domain/word-search'
 import type { Grid, GridStyle, WordPlacement } from '@/domain/word-search'
+import { getGridDimensions } from './grid-dimensions'
 
 interface WordPath {
   readonly x1: number
@@ -62,8 +63,9 @@ export function WordSearchGrid({
   const wordPaths = useMemo(() => showAnswers
     ? buildWordPaths(placements, cellWidth, cellHeight)
     : [], [cellHeight, cellWidth, placements, showAnswers])
-  const rows = grid.length
-  const columns = grid[0].length
+  const dimensions = getGridDimensions(grid)
+  if (dimensions === null) return null
+  const { rows, columns } = dimensions
   const tableClassName = gridStyle === 'full'
     ? 'border-collapse'
     : gridStyle === 'outer'

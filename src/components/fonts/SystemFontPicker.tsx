@@ -43,7 +43,7 @@ export function SystemFontPicker({ value, onChange }: SystemFontPickerProps) {
         setError('System font access is not available in this browser.')
         return
       }
-      const result = await queryLocalFonts()
+      const result = await queryLocalFonts.call(window)
       const unique = new Map<string, LocalFontData>()
       for (const font of result) {
         const key = `${font.family}_${font.style}`

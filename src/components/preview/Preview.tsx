@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { parseFontStyle } from '@/shared/font-style'
 import { useWordSearch } from '@/store/WordSearchProvider'
 import { WordSearchGrid } from './WordSearchGrid'
+import { getGridDimensions } from './grid-dimensions'
 
 /** Displays puzzle and answer tabs while fitting optional output dimensions. */
 export function Preview() {
@@ -25,7 +26,17 @@ export function Preview() {
   }, [measure])
   useLayoutEffect(measure)
 
-  if (state.current === null) {
+  const puzzleDimensions = state.current === null
+    ? null
+    : getGridDimensions(state.current.puzzle)
+  const solutionDimensions = state.current === null
+    ? null
+    : getGridDimensions(state.current.solution)
+
+  if (state.current === null
+    || puzzleDimensions === null
+    || solutionDimensions === null
+  ) {
     return (
       <p className="text-muted-foreground">
         Click Generate to create a word search
@@ -34,9 +45,7 @@ export function Preview() {
   }
 
   const { appearance, output } = state.settings
-  const grid = state.current.puzzle
-  const columns = grid[0].length
-  const rows = grid.length
+  const { columns, rows } = puzzleDimensions
   let cellWidthOverride: number | undefined
   let cellHeightOverride: number | undefined
 

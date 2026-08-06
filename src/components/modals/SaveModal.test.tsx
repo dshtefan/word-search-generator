@@ -1,10 +1,32 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import type { SavedGeneration } from '@/features/saved-generations/types'
-import { WordSearchProvider } from '@/store/WordSearchProvider'
+import type { ExportResult } from '@/features/export/types'
+import {
+  WordSearchProvider,
+  createWordSearchRuntime,
+} from '@/store/WordSearchProvider'
 import { SaveModal } from './SaveModal'
 
 jest.mock('jspdf', () => ({ jsPDF: jest.fn() }))
+
+const browserPointerEvent = Object.getOwnPropertyDescriptor(globalThis, 'PointerEvent')
+
+beforeAll(() => {
+  Object.defineProperty(globalThis, 'PointerEvent', {
+    configurable: true,
+    value: MouseEvent,
+  })
+})
+
+afterAll(() => {
+  if (browserPointerEvent) {
+    Object.defineProperty(globalThis, 'PointerEvent', browserPointerEvent)
+  } else {
+    Reflect.deleteProperty(globalThis, 'PointerEvent')
+  }
+})
 
 const saved: SavedGeneration = {
   id: 'saved-1',
@@ -46,6 +68,27 @@ const saved: SavedGeneration = {
   },
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((done) => { resolve = done })
+  return { promise, resolve }
+}
+
+function SavedModalController() {
+  const [open, setOpen] = useState(true)
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>Reopen export</button>
+      <SaveModal
+        mode="saved"
+        savedList={[saved]}
+        open={open}
+        onOpenChange={setOpen}
+      />
+    </>
+  )
+}
+
 describe('SaveModal', () => {
   beforeEach(() => window.localStorage.clear())
 
@@ -62,8 +105,9 @@ describe('SaveModal', () => {
         .mockResolvedValueOnce({ ok: true as const }),
     }
     const onOpenChange = jest.fn()
+    const runtime = createWordSearchRuntime({ exportService })
     render(
-      <WordSearchProvider dependencies={{ exportService }}>
+      <WordSearchProvider runtime={runtime}>
         <SaveModal
           mode="saved"
           savedList={[saved]}
@@ -90,5 +134,140 @@ describe('SaveModal', () => {
       format: 'svg',
     })
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  test('ignores a stale failure after close and reopen', async () => {
+    const user = userEvent.setup()
+    const first = createDeferred<ExportResult>()
+    const exportService = {
+      exportCurrent: jest.fn(),
+      exportSaved: jest.fn(() => first.promise),
+    }
+    const runtime = createWordSearchRuntime({ exportService })
+    render(
+      <WordSearchProvider runtime={runtime}>
+        <SavedModalController />
+      </WordSearchProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Export 1 generation' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Reopen export' }))
+
+    expect(screen.getByRole('button', { name: 'Export 1 generation' })).toBeEnabled()
+    await act(async () => first.resolve({
+      ok: false,
+      message: 'Stale export failed',
+      cause: new Error('stale'),
+    }))
+    expect(screen.queryByText('Stale export failed')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  test('lets a newer attempt outlive an overlapping stale completion', async () => {
+    const user = userEvent.setup()
+    const first = createDeferred<ExportResult>()
+    const second = createDeferred<ExportResult>()
+    const exportService = {
+      exportCurrent: jest.fn(),
+      exportSaved: jest.fn()
+        .mockReturnValueOnce(first.promise)
+        .mockReturnValueOnce(second.promise),
+    }
+    const runtime = createWordSearchRuntime({ exportService })
+    render(
+      <WordSearchProvider runtime={runtime}>
+        <SavedModalController />
+      </WordSearchProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Export 1 generation' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Reopen export' }))
+    await user.click(screen.getByRole('button', { name: 'Export 1 generation' }))
+
+    await act(async () => first.resolve({ ok: true }))
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    await act(async () => second.resolve({
+      ok: false,
+      message: 'Newest export failed',
+      cause: new Error('newest'),
+    }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Newest export failed')
+  })
+
+  test('exports the complete current snapshot with fallback naming and both variants', async () => {
+    const user = userEvent.setup()
+    const exportService = {
+      exportCurrent: jest.fn().mockResolvedValue({ ok: true as const }),
+      exportSaved: jest.fn(),
+    }
+    const runtime = createWordSearchRuntime({ exportService })
+    const currentRuntime = {
+      ...runtime,
+      initialState: {
+        ...runtime.initialState,
+        settings: saved.settings,
+        current: saved.result,
+        status: 'ready' as const,
+      },
+    }
+    render(
+      <WordSearchProvider runtime={currentRuntime}>
+        <SaveModal open onOpenChange={jest.fn()} />
+      </WordSearchProvider>,
+    )
+
+    await user.clear(screen.getByLabelText('File name'))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(exportService.exportCurrent).toHaveBeenCalledWith({
+      source: {
+        id: 'current',
+        name: 'ws',
+        createdAt: 0,
+        settings: saved.settings,
+        result: saved.result,
+      },
+      format: 'svg',
+      filename: 'ws',
+      includeAnswers: true,
+      includePuzzle: true,
+    })
+  })
+
+  test('exports only the answer variant when both variants are unchecked', async () => {
+    const user = userEvent.setup()
+    const exportService = {
+      exportCurrent: jest.fn().mockResolvedValue({ ok: true as const }),
+      exportSaved: jest.fn(),
+    }
+    const runtime = createWordSearchRuntime({ exportService })
+    const currentRuntime = {
+      ...runtime,
+      initialState: {
+        ...runtime.initialState,
+        settings: saved.settings,
+        current: saved.result,
+        status: 'ready' as const,
+      },
+    }
+    render(
+      <WordSearchProvider runtime={currentRuntime}>
+        <SaveModal open onOpenChange={jest.fn()} />
+      </WordSearchProvider>,
+    )
+
+    await user.click(screen.getByRole('checkbox', {
+      name: 'Download both (with & without answers)',
+    }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(exportService.exportCurrent).toHaveBeenCalledWith(expect.objectContaining({
+      includeAnswers: true,
+      includePuzzle: false,
+    }))
   })
 })

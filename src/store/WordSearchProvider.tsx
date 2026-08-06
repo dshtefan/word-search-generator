@@ -6,7 +6,6 @@ import {
   useMemo,
   useReducer,
   useRef,
-  useState,
 } from 'react'
 import type { ReactNode } from 'react'
 import type { RandomSource } from '@/domain/word-search'
@@ -62,12 +61,14 @@ export interface WordSearchProviderDependencies {
 /** Props for the application-level word-search provider. */
 export interface WordSearchProviderProps {
   readonly children: ReactNode
-  readonly dependencies?: WordSearchProviderDependencies
+  readonly runtime?: WordSearchRuntime
 }
 
-interface ProviderRuntime {
+/** Preloaded repositories and external ports consumed without render-time I/O. */
+export interface WordSearchRuntime {
   readonly preferences: ReturnType<typeof createPreferencesRepository>
   readonly savedGenerations: ReturnType<typeof createSavedGenerationsRepository>
+  readonly initialState: WordSearchState
   readonly random: RandomSource
   readonly createId: () => string
   readonly now: () => number
@@ -76,17 +77,41 @@ interface ProviderRuntime {
 
 const WordSearchContext = createContext<WordSearchContextValue | null>(null)
 
-function getBrowserStorage(): StorageAdapter {
-  return window.localStorage
+function createMemoryStorage(): StorageAdapter {
+  const values = new Map<string, string>()
+  return {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => { values.set(key, value) },
+    removeItem: (key) => { values.delete(key) },
+  }
 }
 
-function createRuntime(
+/** Acquires Web Storage without letting an access-control getter abort startup. */
+function getBrowserStorage(): StorageAdapter {
+  try {
+    return typeof window === 'undefined'
+      ? createMemoryStorage()
+      : window.localStorage
+  } catch {
+    return createMemoryStorage()
+  }
+}
+
+/** Creates and loads one provider runtime outside React's render lifecycle. */
+export function createWordSearchRuntime(
   dependencies: WordSearchProviderDependencies,
-): ProviderRuntime {
+): WordSearchRuntime {
   const storage = dependencies.storage ?? getBrowserStorage()
+  const preferences = createPreferencesRepository(storage)
+  const savedGenerations = createSavedGenerationsRepository(storage)
   return {
-    preferences: createPreferencesRepository(storage),
-    savedGenerations: createSavedGenerationsRepository(storage),
+    preferences,
+    savedGenerations,
+    initialState: {
+      ...createInitialState(),
+      settings: preferences.load(),
+      savedGenerations: savedGenerations.load(),
+    },
     random: dependencies.random ?? Math.random,
     createId: dependencies.createId ?? (() => crypto.randomUUID()),
     now: dependencies.now ?? Date.now,
@@ -94,27 +119,24 @@ function createRuntime(
   }
 }
 
+const defaultWordSearchRuntime = createWordSearchRuntime({})
+
 /** Owns repository initialization and exposes atomic intent-level UI commands. */
 export function WordSearchProvider({
   children,
-  dependencies = {},
+  runtime = defaultWordSearchRuntime,
 }: WordSearchProviderProps) {
-  const [runtime] = useState(() => createRuntime(dependencies))
   const [state, dispatch] = useReducer(
     wordSearchReducer,
-    undefined,
-    (): WordSearchState => ({
-      ...createInitialState(),
-      settings: runtime.preferences.load(),
-      savedGenerations: runtime.savedGenerations.load(),
-    }),
+    runtime.initialState,
   )
-  const skipPreferencePersistence = useRef(false)
+  const clearedPreferenceSnapshot = useRef<string | null>(null)
 
   useEffect(() => {
-    if (skipPreferencePersistence.current) {
-      skipPreferencePersistence.current = false
-      return
+    if (clearedPreferenceSnapshot.current !== null) {
+      const clearedSnapshot = clearedPreferenceSnapshot.current
+      clearedPreferenceSnapshot.current = null
+      if (JSON.stringify(state.settings) === clearedSnapshot) return
     }
     runtime.preferences.save(state.settings)
   }, [runtime, state.settings])
@@ -166,8 +188,9 @@ export function WordSearchProvider({
     }
   }, [state.savedGenerations])
   const reset = useCallback(() => {
+    const defaultSettings = createInitialState().settings
     runtime.preferences.clear()
-    skipPreferencePersistence.current = true
+    clearedPreferenceSnapshot.current = JSON.stringify(defaultSettings)
     dispatch({ type: 'reset' })
   }, [runtime])
 

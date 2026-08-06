@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -42,16 +42,24 @@ export function SaveModal({
   const [downloadBoth, setDownloadBoth] = useState(true)
   const [filename, setFilename] = useState('ws')
   const [error, setError] = useState<string | null>(null)
+  const activeAttempt = useRef(0)
 
   function handleOpenChange(nextOpen: boolean) {
-    if (!nextOpen) setError(null)
+    if (!nextOpen) {
+      activeAttempt.current += 1
+      setError(null)
+      setIsExporting(false)
+    }
     onOpenChange(nextOpen)
   }
 
   async function handleSave() {
+    const attempt = activeAttempt.current + 1
+    activeAttempt.current = attempt
     setError(null)
     setIsExporting(true)
     try {
+      const exportFilename = filename.trim() || 'ws'
       const result = mode === 'saved'
         ? await exportService.exportSaved({
           snapshots: savedList,
@@ -62,25 +70,25 @@ export function SaveModal({
           : await exportService.exportCurrent({
             source: {
               id: 'current',
-              name: filename,
+              name: exportFilename,
               createdAt: 0,
               settings: state.settings,
               result: state.current,
             },
             format,
-            filename: filename || 'ws',
+            filename: exportFilename,
             includeAnswers: true,
             includePuzzle: downloadBoth,
           })
 
-      if (result === null) return
+      if (attempt !== activeAttempt.current || result === null) return
       if ('message' in result) {
         setError(result.message)
         return
       }
       handleOpenChange(false)
     } finally {
-      setIsExporting(false)
+      if (attempt === activeAttempt.current) setIsExporting(false)
     }
   }
 

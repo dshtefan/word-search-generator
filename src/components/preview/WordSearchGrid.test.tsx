@@ -39,4 +39,23 @@ describe('WordSearchGrid', () => {
     expect(line).toHaveAttribute('y2', '50')
     expect(line).toHaveAttribute('stroke', '#123456')
   })
+
+  test.each([
+    ['empty', []],
+    ['non-rectangular', [[{ letter: 'A' }], []]],
+  ] as const)('does not render a %s grid', (_label, malformedGrid) => {
+    render(
+      <WordSearchGrid
+        grid={malformedGrid}
+        placements={[]}
+        fontFamily="Arial"
+        fontSize={10}
+        highlightColor="#123456"
+        gridStyle="outer"
+        showAnswers={false}
+      />,
+    )
+
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
 })

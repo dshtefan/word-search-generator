@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { SaveModal } from '@/components/modals/SaveModal'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { getGridDimensions } from '@/components/preview/grid-dimensions'
 import {
   Popover,
   PopoverContent,
@@ -35,6 +36,15 @@ export function SavedPanel() {
       else next.add(id)
       return next
     })
+  }
+
+  function deleteSaved(id: string) {
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
+      next.delete(id)
+      return next
+    })
+    removeSaved(id)
   }
 
   return (
@@ -80,46 +90,49 @@ export function SavedPanel() {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
-              {savedGenerations.map((saved) => (
-                <div
-                  key={saved.id}
-                  className="flex items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50"
-                >
-                  <Checkbox
-                    checked={selectedIds.has(saved.id)}
-                    onCheckedChange={() => toggleId(saved.id)}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{saved.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {saved.settings.generation.words.length} words,{' '}
-                      {saved.result.puzzle[0].length}x{saved.result.puzzle.length},{' '}
-                      {saved.settings.appearance.fontFamily}
+              {savedGenerations.map((saved) => {
+                const dimensions = getGridDimensions(saved.result.puzzle)
+                return (
+                  <div
+                    key={saved.id}
+                    className="flex items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(saved.id)}
+                      onCheckedChange={() => toggleId(saved.id)}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{saved.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {saved.settings.generation.words.length} words,{' '}
+                        {dimensions?.columns ?? 0}x{dimensions?.rows ?? 0},{' '}
+                        {saved.settings.appearance.fontFamily}
+                      </div>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-1.5 text-muted-foreground hover:text-foreground"
+                      title="Apply"
+                      onClick={() => {
+                        applySaved(saved.id)
+                        setOpen(false)
+                      }}
+                    >
+                      &#8635;
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-1.5 text-muted-foreground hover:text-destructive"
+                      title="Delete"
+                      onClick={() => deleteSaved(saved.id)}
+                    >
+                      &times;
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-1.5 text-muted-foreground hover:text-foreground"
-                    title="Apply"
-                    onClick={() => {
-                      applySaved(saved.id)
-                      setOpen(false)
-                    }}
-                  >
-                    &#8635;
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-1.5 text-muted-foreground hover:text-destructive"
-                    title="Delete"
-                    onClick={() => removeSaved(saved.id)}
-                  >
-                    &times;
-                  </Button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
           <div className="border-t px-3 py-2">

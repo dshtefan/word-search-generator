@@ -1,10 +1,12 @@
 import { act, render } from '@testing-library/react'
+import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
 import { createInitialState } from './initial-state'
 import type { StorageAdapter } from '@/features/saved-generations/repository'
 import type { ExportResult } from '@/features/export/types'
 import {
   WordSearchProvider,
+  createWordSearchRuntime,
   useWordSearch,
   type WordSearchContextValue,
 } from './WordSearchProvider'
@@ -73,8 +75,9 @@ function renderProvider(storage = new MemoryStorage()) {
     now: () => 1_725_555_555_000,
     exportService,
   }
+  const runtime = createWordSearchRuntime(dependencies)
   const view = render(
-    <WordSearchProvider dependencies={dependencies}>
+    <WordSearchProvider runtime={runtime}>
       <Harness onValue={onValue} />
     </WordSearchProvider>,
   )
@@ -86,7 +89,7 @@ function renderProvider(storage = new MemoryStorage()) {
     latest: () => values[values.length - 1],
     rerender(children?: ReactNode) {
       view.rerender(
-        <WordSearchProvider dependencies={dependencies}>
+        <WordSearchProvider runtime={runtime}>
           {children ?? <Harness onValue={onValue} />}
         </WordSearchProvider>,
       )
@@ -106,6 +109,54 @@ function prepareSmallGeneration(context: WordSearchContextValue): void {
 }
 
 describe('WordSearchProvider commands', () => {
+  test('loads an explicit runtime once across StrictMode development renders', () => {
+    const storage = new MemoryStorage()
+    const runtime = createWordSearchRuntime({
+      storage,
+      random: () => 0,
+      createId: () => 'strict-id',
+      now: () => 1,
+      exportService: createExportServiceStub(),
+    })
+
+    render(
+      <StrictMode>
+        <WordSearchProvider runtime={runtime}>
+          <Harness onValue={() => undefined} />
+        </WordSearchProvider>
+      </StrictMode>,
+    )
+
+    expect(storage.gets).toEqual([
+      'word-search:preferences',
+      'word-search:saved-generations',
+    ])
+  })
+
+  test('falls back to memory when the localStorage getter throws', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')!
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Blocked', 'SecurityError')
+      },
+    })
+
+    try {
+      const runtime = createWordSearchRuntime({
+        random: () => 0,
+        createId: () => 'fallback-id',
+        now: () => 1,
+        exportService: createExportServiceStub(),
+      })
+
+      expect(runtime.initialState).toEqual(createInitialState())
+      expect(() => runtime.preferences.save(runtime.initialState.settings)).not.toThrow()
+    } finally {
+      Object.defineProperty(window, 'localStorage', descriptor)
+    }
+  })
+
   test('generates a deterministic result in one final success render', () => {
     const harness = renderProvider()
 
@@ -159,6 +210,18 @@ describe('WordSearchProvider commands', () => {
     })])
     expect(JSON.parse(harness.storage.values.get('word-search:saved-generations')!))
       .toEqual({ version: 1, data: harness.latest().state.savedGenerations })
+  })
+
+  test('assigns sequential default names to unnamed generations', () => {
+    const harness = renderProvider()
+    act(() => prepareSmallGeneration(harness.latest()))
+    act(() => harness.latest().generate())
+
+    act(() => harness.latest().saveGeneration('   '))
+    act(() => harness.latest().saveGeneration(''))
+
+    expect(harness.latest().state.savedGenerations.map(({ name }) => name))
+      .toEqual(['Generation 1', 'Generation 2'])
   })
 
   test('applies a saved snapshot atomically and persists restored preferences', () => {
@@ -216,6 +279,19 @@ describe('WordSearchProvider commands', () => {
     })
     expect(harness.storage.values.has('word-search:preferences')).toBe(false)
     expect(harness.storage.values.get('word-search:saved-generations')).toBe(savedEnvelope)
+  })
+
+  test('persists a settings patch batched with reset', () => {
+    const harness = renderProvider()
+
+    act(() => {
+      harness.latest().reset()
+      harness.latest().updateAppearance({ highlightColor: '#fedcba' })
+    })
+
+    expect(harness.latest().state.settings.appearance.highlightColor).toBe('#fedcba')
+    expect(JSON.parse(harness.storage.values.get('word-search:preferences')!))
+      .toEqual({ version: 1, data: harness.latest().state.settings })
   })
 
   test('initializes repositories once, persists changes, and memoizes context', () => {
