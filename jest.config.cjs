@@ -10,6 +10,8 @@ module.exports = {
       tsconfig: {
         esModuleInterop: true,
         jsx: 'react-jsx',
+        lib: ['ES2020', 'DOM', 'DOM.Iterable'],
+        target: 'ES2020',
         types: ['jest', '@testing-library/jest-dom'],
       },
     }],

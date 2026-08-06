@@ -150,33 +150,33 @@ describe('createSavedGenerationsRepository', () => {
       }
     }],
     ['a duplicate word index', () => {
-      const item = structuredClone(saved)
+      const item = withTwoPlacedWords()
       return {
         ...item,
         result: {
           ...item.result,
           placements: [
-            ...item.result.placements,
+            item.result.placements[0],
             { ...item.result.placements[0] },
           ],
         },
       }
     }],
     ['an extra placement for a blank original word', () => {
-      const item = structuredClone(saved)
+      const item = withTwoPlacedWords()
       return {
         ...item,
         settings: {
           ...item.settings,
           generation: {
             ...item.settings.generation,
-            words: ['CAT', ' '],
+            words: ['CAT', ' ', 'Z'],
           },
         },
         result: {
           ...item.result,
           placements: [
-            ...item.result.placements,
+            item.result.placements[0],
             {
               x: 2,
               y: 1,

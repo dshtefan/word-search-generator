@@ -245,9 +245,11 @@ function isWordSearchResult(
 
   const placedWordIndices = new Set<number>()
   return placements.every((placement) => {
-    if (!isPlacement(placement, settings, puzzle, solution)
+    if (!isRecord(placement)
+      || !isNonNegativeInteger(placement.wordIndex)
       || !expectedWordIndices.has(placement.wordIndex)
       || placedWordIndices.has(placement.wordIndex)
+      || !isPlacement(placement, settings, puzzle, solution)
     ) {
       return false
     }

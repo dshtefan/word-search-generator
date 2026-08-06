@@ -1,10 +1,10 @@
 node_modules
 dist
-coverage/
+/coverage/
 .vite
 .vibe
-.superpowers/
-docs/superpowers/
-specs/
+/.superpowers/
+/docs/superpowers/
+/specs/
 .worktrees/
 *.local
